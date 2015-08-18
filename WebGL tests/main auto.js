@@ -449,12 +449,6 @@ function loop(){
 	angleX += 0.1 * delta;
 	angleZ += 0.1 * delta;
 	
-	if(zoom > 10){
-		zoom -= 0.01 * delta;
-	}else if(zoom < 10){
-		zoom += 0.01 * delta;
-	}
-	
 	if(keyState[38]){
 		angleX -= 0.1 * delta;
 	}
