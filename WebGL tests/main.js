@@ -1,5 +1,7 @@
 var canvas = null;
 var gl = null;
+var keyState = [];
+var fullscreen = false;
 
 var shaderProgram;
 
@@ -8,15 +10,20 @@ var aspectRatio;
 var projection = null;
 var modelView = null;
 
+var cubeTexture;
+
 var cubeVerticesBuffer;
 var cubeColorBuffer;
+var cubeTextureCoordBuffer;
+var cubeNormalsBuffer;
 var cubeIndexBuffer;
 
 var vertexPositionAttribute;
 var vertexColorAttribute;
+var vertexTextureCoordAttribute;
+var vertexNormalAttribute;
 
 // FIX FOR COMPATIBILITY
-
 window.requestAnimationFrame = function(){
 	return (
 		window.requestAnimationFrame ||
@@ -135,6 +142,20 @@ function setMatrixUniforms() {
 	
 	var mvUniform = gl.getUniformLocation(shaderProgram, "modelView");
 	gl.uniformMatrix4fv(mvUniform, false, new Float32Array(modelView.flatten()));
+	
+	var normalMatrix = modelView.inverse();
+	normalMatrix = normalMatrix.transpose();
+	var normalMatrixUniform = gl.getUniformLocation(shaderProgram, "normalMatrix");
+	gl.uniformMatrix4fv(normalMatrixUniform, false, new Float32Array(normalMatrix.flatten()));
+}
+
+function generateTexture(image, texture){
+	gl.bindTexture(gl.TEXTURE_2D, texture);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+	gl.generateMipmap(gl.TEXTURE_2D);
+	gl.bindTexture(gl.TEXTURE_2D, null);
 }
 
 function start(){
@@ -149,6 +170,7 @@ function init(){
 	
 	initShaders();
 	initBuffers();
+	initTextures();
 	initListeners();
 	
 	//GL
@@ -204,16 +226,21 @@ function initBuffers(){
 	
 	// COLORS
 	
+	var colors = [];
+	
 	var facesColors = [
 		[1.0, 1.0, 1.0, 1.0],
-		[1.0, 0.0, 0.0, 1.0],
-		[0.0, 1.0, 0.0, 1.0],
-		[0.0, 0.0, 1.0, 1.0],
-		[1.0, 1.0, 0.0, 1.0],
-		[1.0, 0.0, 1.0, 1.0]
+		
+		[1.0, 1.0, 1.0, 1.0],
+		
+		[1.0, 1.0, 1.0, 1.0],
+		
+		[1.0, 1.0, 1.0, 1.0],
+		
+		[1.0, 1.0, 1.0, 1.0],
+		
+		[1.0, 1.0, 1.0, 1.0]
 	];
-	
-	var colors = [];
 	
 	for(j=0; j<6; j++){
 		var face = facesColors[j];
@@ -223,9 +250,93 @@ function initBuffers(){
 		}
 	}
 	
+	
 	cubeColorBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, cubeColorBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+	
+	// TEXTURE COORDS
+	
+	var textureCoords = [
+		// Front
+		0.0,  0.0,
+		1.0,  0.0,
+		1.0,  1.0,
+		0.0,  1.0,
+		// Back
+		0.0,  0.0,
+		1.0,  0.0,
+		1.0,  1.0,
+		0.0,  1.0,
+		// Top
+		0.0,  0.0,
+		1.0,  0.0,
+		1.0,  1.0,
+		0.0,  1.0,
+		// Bottom
+		0.0,  0.0,
+		1.0,  0.0,
+		1.0,  1.0,
+		0.0,  1.0,
+		// Right
+		0.0,  0.0,
+		1.0,  0.0,
+		1.0,  1.0,
+		0.0,  1.0,
+		// Left
+		0.0,  0.0,
+		1.0,  0.0,
+		1.0,  1.0,
+		0.0,  1.0
+	];
+	
+	cubeTextureCoordBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, cubeTextureCoordBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoords), gl.STATIC_DRAW);
+	
+	// NORMALS
+	
+	var normals = [
+		// Front
+		0.0,  0.0,  1.0,
+		0.0,  0.0,  1.0,
+		0.0,  0.0,  1.0,
+		0.0,  0.0,  1.0,
+		
+		// Back
+		0.0,  0.0, -1.0,
+		0.0,  0.0, -1.0,
+		0.0,  0.0, -1.0,
+		0.0,  0.0, -1.0,
+		
+		// Top
+		0.0,  1.0,  0.0,
+		0.0,  1.0,  0.0,
+		0.0,  1.0,  0.0,
+		0.0,  1.0,  0.0,
+		
+		// Bottom
+		0.0, -1.0,  0.0,
+		0.0, -1.0,  0.0,
+		0.0, -1.0,  0.0,
+		0.0, -1.0,  0.0,
+		
+		// Right
+		1.0,  0.0,  0.0,
+		1.0,  0.0,  0.0,
+		1.0,  0.0,  0.0,
+		1.0,  0.0,  0.0,
+		
+		// Left
+		-1.0,  0.0,  0.0,
+		-1.0,  0.0,  0.0,
+		-1.0,  0.0,  0.0,
+		-1.0,  0.0,  0.0
+	];
+	
+	cubeNormalsBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, cubeNormalsBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
 	
 	// INDICES
 	
@@ -263,9 +374,20 @@ function initShaders(){
 	
 	vertexColorAttribute = gl.getAttribLocation(shaderProgram, "vertexColor");
 	gl.enableVertexAttribArray(vertexColorAttribute);
+	
+	vertexTextureCoordAttribute = gl.getAttribLocation(shaderProgram, "textureCoords");
+	gl.enableVertexAttribArray(vertexTextureCoordAttribute);
+	
+	vertexNormalAttribute = gl.getAttribLocation(shaderProgram, "vertexNormal");
+	gl.enableVertexAttribArray(vertexNormalAttribute);
 }
 
-var keyState = [];
+function initTextures(){
+	cubeTexture = gl.createTexture();
+	var cubeImage = new Image();
+	cubeImage.onload = function(){ generateTexture(cubeImage, cubeTexture) };
+	cubeImage.src = "iron.png";
+}
 
 function initListeners(){
 	window.addEventListener("keydown", function(e){
@@ -285,7 +407,12 @@ function initListeners(){
 	});
 }
 
-var fullscreen = false;
+var angleX = 0.0;
+var angleY = 0.0;
+var angleZ = 0.0;
+
+var lastUpdate = Date.now();
+var delta = 0;
 
 function directKeyDown(keycode){
 	if(keycode == 122 && !fullscreen){
@@ -301,38 +428,14 @@ function directKeyUp(keycode){
 	}
 }
 
-var angleX = 0.0;
-var angleY = 0.0;
-var angleZ = 0.0;
-
-function optimizeAngles(){
-	if(angleX >= 360){
-		angleX -= 360;
-	}else if(angleX < 0){
-		angleX += 360;
-	}
-	
-	if(angleY >= 360){
-		angleY -= 360;
-	}else if(angleY < 0){
-		angleY += 360;
-	}
-	
-	if(angleZ >= 360){
-		angleZ -= 360;
-	}else if(angleZ < 0){
-		angleZ += 360;
-	}
-}
-
-var lastUpdate = Date.now();
-var delta = 0;
-
-function loop(){
+function calcDelta(){
 	var now = Date.now();
 	delta = now - lastUpdate;
 	lastUpdate = now;
-	
+}
+
+function loop(){
+	calcDelta();
 	render();
 	
 	if(keyState[38]){
@@ -354,6 +457,26 @@ function loop(){
 	window.requestAnimationFrame(loop);
 }
 
+function optimizeAngles(){
+	if(angleX >= 360){
+		angleX -= 360;
+	}else if(angleX < 0){
+		angleX += 360;
+	}
+	
+	if(angleY >= 360){
+		angleY -= 360;
+	}else if(angleY < 0){
+		angleY += 360;
+	}
+	
+	if(angleZ >= 360){
+		angleZ -= 360;
+	}else if(angleZ < 0){
+		angleZ += 360;
+	}
+}
+
 function render(){
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	
@@ -367,8 +490,20 @@ function render(){
 	
 	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesBuffer);
 	gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+	
 	gl.bindBuffer(gl.ARRAY_BUFFER, cubeColorBuffer);
 	gl.vertexAttribPointer(vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
+	
+	gl.bindBuffer(gl.ARRAY_BUFFER, cubeTextureCoordBuffer);
+	gl.vertexAttribPointer(vertexTextureCoordAttribute, 2, gl.FLOAT, false, 0, 0);
+	
+	gl.bindBuffer(gl.ARRAY_BUFFER, cubeNormalsBuffer);
+	gl.vertexAttribPointer(vertexNormalAttribute, 3, gl.FLOAT, false, 0, 0);
+	
+	gl.activeTexture(gl.TEXTURE0);
+	gl.bindTexture(gl.TEXTURE_2D, cubeTexture);
+	gl.uniform1i(gl.getUniformLocation(shaderProgram, "uSampler"), 0);
+	
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeIndexBuffer);
 	setMatrixUniforms();
 	gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0);

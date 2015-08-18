@@ -14,24 +14,49 @@
 		<script id="shader-vs" type="x-shader/x-vertex">
 			attribute vec3 vertexPos;
 			attribute vec4 vertexColor;
+			attribute vec2 textureCoords;
+			attribute vec3 vertexNormal;
 			
+			uniform mat4 normalMatrix;
 			uniform mat4 modelView;
 			uniform mat4 projection;
 			
 			varying lowp vec4 vColor;
+			varying highp vec2 vTextureCoords;
+			varying highp vec3 lighting;
 
 			void main(void){
 				gl_Position = projection * modelView * vec4(vertexPos, 1.0);
 				vColor = vertexColor;
+				vTextureCoords = textureCoords;
+				
+				// Lighting
+				
+				highp vec3 ambientLight = vec3(0.25, 0.25, 0.25);
+				highp vec3 directionalLightColor = vec3(0.6, 0.6, 0.6);
+				highp vec3 directionalVector = vec3(0.85, 0.8, 0.75);
+				
+				highp vec4 transformedNormal = normalMatrix * vec4(vertexNormal, 1.0);
+				
+				// Plus c'est grand, plus la normale "regarde" la lumière
+				highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);
+				
+				lighting = ambientLight + (directionalLightColor * directional);
 			}
 		</script>
 		
 		<!-- FRAGMENT SHADER ! LMAO -->
 		<script id="shader-fs" type="x-shader/x-fragment">
 			varying lowp vec4 vColor;
+			varying highp vec2 vTextureCoords;
+			varying highp vec3 lighting;
+			
+			uniform sampler2D uSampler;
 			
 			void main(void){
-				gl_FragColor = vColor;
+				mediump vec4 texelColor = texture2D(uSampler, vec2(vTextureCoords.s, vTextureCoords.t)) * vColor;
+			
+				gl_FragColor = vec4(texelColor.rgb * lighting, texelColor.a);
 			}
 		</script>
 	</head>
