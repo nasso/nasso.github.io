@@ -336,7 +336,7 @@ function loop(){
 	render();
 	
 	angleX += 0.1 * delta;
-	angleZ += 0.2 * delta;
+	angleZ += 0.5 * delta;
 	
 	if(keyState[38]){
 		angleX -= 0.1 * delta;
