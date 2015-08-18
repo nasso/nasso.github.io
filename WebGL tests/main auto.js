@@ -167,7 +167,7 @@ function start(){
 }
 
 function init(){
-	alert("Press F11 to enable fullscreen, and press escape to disable it.");
+	// alert("Press F11 to enable fullscreen, and press escape to disable it.");
 	
 	initShaders();
 	initBuffers();
