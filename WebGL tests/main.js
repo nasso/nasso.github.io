@@ -11,6 +11,7 @@ var projection = null;
 var modelView = null;
 
 var cubeTexture;
+var cubeNormalMap;
 
 var cubeVerticesBuffer;
 var cubeColorBuffer;
@@ -176,6 +177,7 @@ function init(){
 	//GL
 	gl.clearColor(0.0, 0.0, 0.0, 1.0);
 	gl.enable(gl.DEPTH_TEST);
+	gl.enable(gl.CULL_FACE);
 	gl.depthFunc(gl.LEQUAL);
 }
 
@@ -387,6 +389,11 @@ function initTextures(){
 	var cubeImage = new Image();
 	cubeImage.onload = function(){ generateTexture(cubeImage, cubeTexture) };
 	cubeImage.src = "iron.png";
+	
+	cubeNormalMap = gl.createTexture();
+	var cubeNormalImage = new Image();
+	cubeNormalImage.onload = function(){ generateTexture(cubeNormalImage, cubeNormalMap) };
+	cubeNormalImage.src = "iron_norm.png"
 }
 
 function initListeners(){
@@ -410,6 +417,7 @@ function initListeners(){
 var angleX = 0.0;
 var angleY = 0.0;
 var angleZ = 0.0;
+var zoom = -4.0;
 
 var lastUpdate = Date.now();
 var delta = 0;
@@ -450,6 +458,12 @@ function loop(){
 	if(keyState[39]){
 		angleY += 0.1 * delta;
 	}
+	if(keyState[90]){
+		zoom += 0.01 * delta;
+	}
+	if(keyState[83]){
+		zoom -= 0.01 * delta;
+	}
 	
 	optimizeAngles();
 	
@@ -483,7 +497,7 @@ function render(){
 	projection = makePerspective(70, aspectRatio, 0.1, 100.0);
 	
 	modelView = identity();
-	modelView = translate(modelView, [0.0, 0.0, -6.0]);
+	modelView = translate(modelView, [0.0, 0.0, zoom]);
 	modelView = rotate(modelView, angleX, [1.0, 0.0, 0.0])
 	modelView = rotate(modelView, angleY, [0.0, 1.0, 0.0])
 	modelView = rotate(modelView, angleZ, [0.0, 0.0, 1.0])
@@ -503,6 +517,10 @@ function render(){
 	gl.activeTexture(gl.TEXTURE0);
 	gl.bindTexture(gl.TEXTURE_2D, cubeTexture);
 	gl.uniform1i(gl.getUniformLocation(shaderProgram, "uSampler"), 0);
+	
+	gl.activeTexture(gl.TEXTURE1);
+	gl.bindTexture(gl.TEXTURE_2D, cubeNormalMap);
+	gl.uniform1i(gl.getUniformLocation(shaderProgram, "uSamplerNorm"), 0);
 	
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeIndexBuffer);
 	setMatrixUniforms();
