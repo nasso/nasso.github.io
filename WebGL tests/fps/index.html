@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<title>Canvas test</title>
+		<meta charset="utf-8">
+		<link rel="stylesheet" href="../css/style.css" type="text/css">
+		<script type="text/javascript" src="../lib/jquery.js"></script>
+		<script type="text/javascript" src="../lib/sylvester.js"></script>
+		<script type="text/javascript" src="../lib/glUtils.js"></script>
+		<script type="text/javascript" src="main.js"></script>
+		
+		<!-- VERTEX SHADER ! ROFL -->
+		<script id="shader-vs" type="x-shader/x-vertex">
+			attribute vec3 vertexPos;
+			attribute vec4 vertexColor;
+			attribute vec3 vertexNormal;
+			
+			uniform mat4 normalMatrix;
+			uniform mat4 model;
+			uniform mat4 view;
+			uniform mat4 projection;
+			uniform vec3 lightDirection;
+			
+			varying lowp vec4 vColor;
+			varying highp vec3 vLighting;
+
+			void main(void){
+				gl_Position = projection * model * view * vec4(vertexPos, 1.0);
+				vColor = vertexColor;
+				
+				// Apply lighting effect
+
+				highp vec3 ambientLight = vec3(0.4, 0.4, 0.4);
+				highp vec3 directionalLightColor = vec3(0.6, 0.6, 0.6);
+				highp vec3 directionalVector = lightDirection * -1.0;
+
+				highp vec4 transformedNormal = normalMatrix * vec4(vertexNormal, 1.0);
+
+				highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);
+				vLighting = ambientLight + (directionalLightColor * directional);
+			}
+		</script>
+		
+		<!-- FRAGMENT SHADER ! LMAO -->
+		<script id="shader-fs" type="x-shader/x-fragment">
+			varying lowp vec4 vColor;
+			varying highp vec3 vLighting;
+			
+			void main(void){
+				gl_FragColor = vec4(vColor.rgb * vLighting, vColor.a);
+			}
+		</script>
+	</head>
+	<body onload="start();">
+		<canvas id="canvas" width="1280" height="720">
+			Your browser doesn't support &lt;canvas&gt; HTML5 feature.
+		</canvas>
+	</body>
+</html>

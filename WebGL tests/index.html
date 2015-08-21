@@ -2,70 +2,20 @@
 
 <html>
 	<head>
-		<title>Canvas test</title>
+		<title>WebGL tests</title>
 		<meta charset="utf-8">
-		<link rel="stylesheet" href="css/style.css" type="text/css">
-		<script type="text/javascript" src="lib/jquery.js"></script>
-		<script type="text/javascript" src="lib/sylvester.js"></script>
-		<script type="text/javascript" src="lib/glUtils.js"></script>
-		<script type="text/javascript" src="main.js"></script>
-		
-		<!-- VERTEX SHADER ! ROFL -->
-		<script id="shader-vs" type="x-shader/x-vertex">
-			attribute vec3 vertexPos;
-			attribute vec4 vertexColor;
-			attribute vec2 textureCoords;
-			attribute vec3 vertexNormal;
-			
-			uniform mat4 normalMatrix;
-			uniform mat4 modelView;
-			uniform mat4 projection;
-			
-			varying lowp vec4 vColor;
-			varying highp vec2 vTextureCoords;
-			varying highp vec4 vTransformedNormal;
-
-			void main(void){
-				gl_Position = projection * modelView * vec4(vertexPos, 1.0);
-				vColor = vertexColor;
-				vTextureCoords = textureCoords;
-				
-				// Lighting
-				
-				vTransformedNormal = normalMatrix * vec4(vertexNormal, 1.0);
-			}
-		</script>
-		
-		<!-- FRAGMENT SHADER ! LMAO -->
-		<script id="shader-fs" type="x-shader/x-fragment">
-			varying lowp vec4 vColor;
-			varying highp vec2 vTextureCoords;
-			varying highp vec4 vTransformedNormal;
-			
-			uniform sampler2D uSampler;
-			uniform sampler2D uSamplerNorm;
-			
-			void main(void){
-				mediump vec4 texelColor = texture2D(uSampler, vec2(vTextureCoords.s, vTextureCoords.t)) * vColor;
-				
-				highp vec3 ambientLight = vec3(0.25, 0.25, 0.25);
-				highp vec3 directionalLightColor = vec3(0.6, 0.6, 0.6);
-				highp vec3 directionalVector = vec3(0.85, 0.8, 0.75);
-				
-				highp vec3 texelNormal = vec3(texture2D(uSamplerNorm, vec2(vTextureCoords.s, vTextureCoords.t)).xyz*2.0-1.0);
-				
-				// Plus c'est grand, plus la normale "regarde" la lumière
-				highp float directional = max(dot(vTransformedNormal.xyz * texelNormal, directionalVector), 0.0);
-				
-				highp vec3 lighting = ambientLight + (directionalLightColor * directional);
-				
-				gl_FragColor = vec4(texelColor.rgb * lighting, texelColor.a);
-			}
-		</script>
 	</head>
 	<body onload="start();">
-		<canvas id="canvas" width="1280" height="720">
-			Your browser doesn't support &lt;canvas&gt; HTML5 feature.
-		</canvas>
+		<h1>Here are my WebGL tests !</h1>
+		<h2>Cube</h2>
+		<ul>
+			<li><a href="cube/index.html">Cube: Move with arrows keys !</a></li>
+			<li><a href="cube/automatic.html">Cube: Mobile version, auto rotate !</a></li>
+		</ul>
+		<h2>FPS Controls</h2>
+		<ul>
+			<li><a href="fps/index.html">FPS: Move with ZQSD and use mouse to see !</a></li>
+			<li><a href="fps/qwerty.html">FPS: Move with WASD and use mouse to see !</a></li>
+		</ul>
 	</body>
 </html>
