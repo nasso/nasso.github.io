@@ -3,7 +3,7 @@ var gl = null;
 var keyState = [];
 var fullscreen = false;
 
-var lightDirection = $V([0.0, 0.0, -1.0]);
+var lightDirection = $V([-0.6, -0.4, -1.0]);
 
 var oldMouseCoordsDirty = false;
 var relMouseCoords = {x: 0, y: 0};
@@ -21,9 +21,9 @@ var settings = {
 };
 
 var controls = {
-	forward: 87, // W
+	forward: 90, // Z
 	backward: 83, // S
-	strafeLeft: 65, // A
+	strafeLeft: 81, // Q
 	strafeRight: 68, // D
 	run: 17, // CTRL
 	fullscreen: 122, // F11
@@ -152,31 +152,45 @@ function unsetFullScreen(elem){
 	}
 }
 
+function rgbFloat(r, g, b){
+	return [r / 255, g / 255, b / 255];
+}
+
+function rgbaFloat(r, g, b, a){
+	return [r / 255, g / 255, b / 255, a / 255];
+}
+
 function identity() {
 	return Matrix.I(4);
 }
 
 function translate(a, v) {
+	if(a == null){
+		a = identity();
+	}
+	
 	return a.x(Matrix.Translation($V([v[0], v[1], v[2]])).ensure4x4());
 }
 
 function rotate(a, angle, v) {
+	if(a == null){
+		a = identity();
+	}
+	
 	return a.x(Matrix.Rotation(angle * Math.PI / 180, $V([v[0], v[1], v[2]])).ensure4x4());
 }
 
 function scale(a, v) {
+	if(a == null){
+		a = identity();
+	}
+	
 	return a.x(Matrix.Scale($V([v[0], v[1], v[2]])).ensure4x4());
 }
 
 function setUniforms() {
-	var pUniform = gl.getUniformLocation(shaderProgram, "projection");
-	gl.uniformMatrix4fv(pUniform, false, new Float32Array(projection.flatten()));
-	
-	var mUniform = gl.getUniformLocation(shaderProgram, "model");
-	gl.uniformMatrix4fv(mUniform, false, new Float32Array(model.flatten()));
-	
-	var vUniform = gl.getUniformLocation(shaderProgram, "view");
-	gl.uniformMatrix4fv(vUniform, false, new Float32Array(view.flatten()));
+	var pvmUniform = gl.getUniformLocation(shaderProgram, "pvm");
+	gl.uniformMatrix4fv(pvmUniform, false, new Float32Array(projection.x(view).x(model).flatten()));
 	
 	var normalMatrix = model.inv();
 	normalMatrix = normalMatrix.transpose();
@@ -184,10 +198,21 @@ function setUniforms() {
 	gl.uniformMatrix4fv(nUniform, false, new Float32Array(normalMatrix.flatten()));
 	
 	var lightUniform = gl.getUniformLocation(shaderProgram, "lightDirection");
-	gl.uniform3fv(lightUniform, lightDirection.elements);
+	gl.uniform3fv(lightUniform, new Float32Array(lightDirection.elements));
 }
 
-function createMesh(vertices, colors, normals, indices){
+function setLightUniforms() {
+	var pUniform = gl.getUniformLocation(lightShaderProgram, "projection");
+	gl.uniformMatrix4fv(pUniform, false, new Float32Array(lightProjection.flatten()));
+	
+	var mUniform = gl.getUniformLocation(lightShaderProgram, "model");
+	gl.uniformMatrix4fv(mUniform, false, new Float32Array(model.flatten()));
+	
+	var vUniform = gl.getUniformLocation(lightShaderProgram, "view");
+	gl.uniformMatrix4fv(vUniform, false, new Float32Array(lightView.flatten()));
+}
+
+function createMesh(vertices, colors, normals, indices, material){
 	var mesh = [];
 	
 	mesh.vertices = vertices;
@@ -195,6 +220,8 @@ function createMesh(vertices, colors, normals, indices){
 	mesh.normals = normals;
 	mesh.indices = indices;
 	mesh.size = indices.length;
+	mesh.material = material;
+	mesh.transform = identity();
 	
 	mesh.verticesBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, mesh.verticesBuffer);
@@ -217,6 +244,94 @@ function createMesh(vertices, colors, normals, indices){
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 	
 	return mesh;
+}
+
+function loadObj(id, color, material){
+	if(color.length == 3){
+		color = color.concat([1.0]);
+	}
+	
+	var readedVertices = [];
+	var readedNormals = [];
+	
+	var verticesNumber = 0;
+	var verticesProt = [];
+	var faces = [];
+	
+	var objSource = $("#"+id)[0].innerHTML;
+	var lines = objSource.split("\n");
+	
+	for(var i = 0; i < lines.length; i++){
+		var line = lines[i];
+		
+		while(line.contains("\t")){
+			line = line.replace("\t", "");
+		}
+		
+		var words = line.split(" ");
+		
+		if(words[0] == "v"){
+			readedVertices = readedVertices.concat([parseFloat(words[1]), parseFloat(words[2]), parseFloat(words[3])]);
+		}else if(words[0] == "vn"){
+			readedNormals = readedNormals.concat([parseFloat(words[1]), parseFloat(words[2]), parseFloat(words[3])]);
+		}else if(words[0] == "f"){
+			var verts = [words[1].split("/"), words[2].split("/"), words[3].split("/")];
+			
+			for(var j = 0; j < verts.length; j++){
+				var vertProt = {
+					vertIndex: (verts[j][0]-1),
+					normIndex: (verts[j][2]-1)
+				};
+				
+				var doublon = false;
+				var globalIndex = 0;
+				for(var e = 0; e < verticesNumber; e++){
+					var currVertProt = verticesProt[e];
+					
+					if(currVertProt.vertIndex == vertProt.vertIndex && currVertProt.normIndex == vertProt.normIndex){
+						doublon = true;
+						globalIndex = e;
+						break;
+					}
+					
+					globalIndex = e+1;
+				}
+				
+				if(!doublon){
+					verticesProt = verticesProt.concat(vertProt);
+					verticesNumber++;
+				}
+				
+				faces = faces.concat([globalIndex]);
+			}
+		}
+	}
+	
+	var vertices = [];
+	var normals = [];
+	var colors = [];
+	
+	for(var i = 0; i < verticesNumber; i++){
+		var vertIndex = verticesProt[i].vertIndex * 3;
+		var normIndex = verticesProt[i].normIndex * 3;
+		
+		vertices = vertices.concat([
+			readedVertices[vertIndex],
+			readedVertices[vertIndex+1],
+			readedVertices[vertIndex+2]
+		]);
+		normals = normals.concat([
+			readedNormals[normIndex],
+			readedNormals[normIndex+1],
+			readedNormals[normIndex+2]
+		]);
+	}
+	
+	for(var i = 0; i < vertices.length/3; i++){
+		colors = colors.concat(color);
+	}
+	
+	return createMesh(vertices, colors, normals, faces, material);
 }
 
 function start(){
@@ -245,41 +360,41 @@ function init(){
 	//GL
 	gl.clearColor(0.6, 0.8, 1.0, 1.0);
 	gl.enable(gl.DEPTH_TEST);
+	gl.enable(gl.CULL_FACE);
 	gl.depthFunc(gl.LEQUAL);
 }
 
 function initBuffers(){
-	world[0] = [];
-	
 	var vertices = [
 		-8.0, -8.0, 0.0,
 		-8.0, 8.0, 0.0,
 		8.0, 8.0, 0.0,
-		8.0, -8.0, 0.0,
+		8.0, -8.0, 0.0
 	];
 	
 	var colors = [
 		1.0, 1.0, 1.0, 1.0,
 		1.0, 1.0, 1.0, 1.0,
 		1.0, 1.0, 1.0, 1.0,
-		1.0, 1.0, 1.0, 1.0,
+		1.0, 1.0, 1.0, 1.0
 	];
 	
 	var normals = [
 		0.0, 0.0, 1.0,
 		0.0, 0.0, 1.0,
 		0.0, 0.0, 1.0,
-		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0
 	];
 	
 	var indices = [
-		0, 1, 2,
-		0, 3, 2
+		0, 3, 1,
+		3, 2, 1
 	];
 	
-	world[0].mesh = createMesh(vertices, colors, normals, indices);
-	world[0].mesh.transform = identity();
-	world[0].material = materials.iron;
+	world[0] = createMesh(vertices, colors, normals, indices, materials.iron);
+	
+	world[1] = loadObj("suzanneObj", rgbFloat(247, 209, 59), materials.iron);
+	world[1].transform = translate(world[1].transform, [0.0, 0.0, 1.0]);
 }
 
 function initShaders(){
@@ -305,6 +420,8 @@ function initShaders(){
 	
 	vertexNormalAttribute = gl.getAttribLocation(shaderProgram, "vertexNormal");
 	gl.enableVertexAttribArray(vertexNormalAttribute);
+	
+	gl.useProgram(null);
 }
 
 function initListeners(){
@@ -322,6 +439,12 @@ function initListeners(){
 		e.preventDefault();
 		keyState[e.keyCode] = false;
 		directKeyUp(e.keyCode);
+	});
+	
+	canvas.addEventListener("mousedown", function(e){
+		if(e.button == 0){
+			canvas.requestPointerLock();
+		}
 	});
 	
 	canvas.addEventListener("mousemove", function(e){
@@ -427,6 +550,8 @@ function input(){
 	camera.center = camera.eye.add(camera.orientation);
 }
 
+var angle = 0.0;
+
 function loop(){
 	calcDelta();
 	
@@ -436,6 +561,16 @@ function loop(){
 	if(canvas.height != settings.resolution.height){
 		canvas.height = settings.resolution.height;
 	}
+	
+	angle += 0.1 * delta;
+	
+	if(angle > 360.0){
+		angle -= 360.0;
+	}else if(angle < 0.0){
+		angle += 360.0;
+	}
+	
+	world[1].transform = rotate(null, angle, [0.0, 0.0, 1.0]);
 	
 	input();
 	render();
@@ -447,6 +582,8 @@ function loop(){
 function render(){
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	
+	gl.useProgram(shaderProgram);
+	
 	projection = makePerspective(settings.fov, settings.ratio, 0.1, 1000.0);
 	
 	model = identity();
@@ -456,23 +593,23 @@ function render(){
 						camera.up.elements[0], camera.up.elements[1], camera.up.elements[2]);
 	
 	for(var i = 0; i < world.length; i++){
-		var mesh = world[i].mesh;
+		var mesh = world[i];
 		
-		var modelMatrixSave = model;
-			model = model.x(mesh.transform);
-			
-			gl.bindBuffer(gl.ARRAY_BUFFER, mesh.verticesBuffer);
-			gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
-			
-			gl.bindBuffer(gl.ARRAY_BUFFER, mesh.colorsBuffer);
-			gl.vertexAttribPointer(vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
-			
-			gl.bindBuffer(gl.ARRAY_BUFFER, mesh.normalsBuffer);
-			gl.vertexAttribPointer(vertexNormalAttribute, 3, gl.FLOAT, false, 0, 0);
-			
-			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.indicesBuffer);
-			setUniforms();
-			gl.drawElements(gl.TRIANGLES, mesh.size, gl.UNSIGNED_SHORT, 0);
-		model = modelMatrixSave;
+		model = mesh.transform;
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, mesh.verticesBuffer);
+		gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, mesh.colorsBuffer);
+		gl.vertexAttribPointer(vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, mesh.normalsBuffer);
+		gl.vertexAttribPointer(vertexNormalAttribute, 3, gl.FLOAT, false, 0, 0);
+		
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.indicesBuffer);
+		setUniforms();
+		gl.drawElements(gl.TRIANGLES, mesh.size, gl.UNSIGNED_SHORT, 0);
 	}
+	
+	gl.useProgram(null);
 }
