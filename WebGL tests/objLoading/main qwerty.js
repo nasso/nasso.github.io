@@ -50,6 +50,10 @@ var vertexColorAttribute;
 var vertexNormalAttribute;
 
 // FIX FOR COMPATIBILITY
+function stringContains(str, sample){
+	return str.indexOf(sample) != -1;
+}
+
 function fixCompatibility(){
 	canvas.requestPointerLock = canvas.requestPointerLock ||
 								canvas.mozRequestPointerLock ||
@@ -264,7 +268,7 @@ function loadObj(id, color, material){
 	for(var i = 0; i < lines.length; i++){
 		var line = lines[i];
 		
-		while(line.contains("\t")){
+		while(stringContains(line, "\t")){
 			line = line.replace("\t", "");
 		}
 		
