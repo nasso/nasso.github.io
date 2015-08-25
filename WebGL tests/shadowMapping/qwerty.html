@@ -2,13 +2,77 @@
 
 <html>
 	<head>
-		<title>WebGL OBJ Loading</title>
+		<title>WebGL shadow mapping</title>
 		<meta charset="utf-8">
 		<link rel="stylesheet" href="../css/style.css" type="text/css">
 		<script type="text/javascript" src="../lib/jquery.js"></script>
 		<script type="text/javascript" src="../lib/sylvester.js"></script>
 		<script type="text/javascript" src="../lib/glUtils.js"></script>
 		<script type="text/javascript" src="main.js"></script>
+		
+		<script type="application/json" id="controls">
+			{
+				"forward":87,
+				"backward":83,
+				"strafeLeft":65,
+				"strafeRight":68,
+				"run":17,
+				
+				"fullscreen":122,
+				"mouseSensitivity":0.2
+			}
+		</script>
+		
+		<!-- VERTEX SHADER ! ROFL -->
+		<script id="hud-shader-vs" type="x-shader/x-vertex">
+			attribute vec2 vertexPos;
+			attribute vec2 textureCoord;
+			
+			varying highp vec2 vTextureCoord;
+
+			void main(void){
+				gl_Position = vec4(vertexPos, 1.0, 1.0);
+				
+				vTextureCoord = textureCoord;
+			}
+		</script>
+		
+		<!-- FRAGMENT SHADER ! LMAO -->
+		<script id="hud-shader-fs" type="x-shader/x-fragment">
+			varying highp vec2 vTextureCoord;
+			
+			uniform sampler2D uSampler;
+			
+			void main(void){
+				gl_FragColor = vec4(texture2D(uSampler, vTextureCoord).rgba);
+			}
+		</script>
+		
+		<!-- VERTEX SHADER ! ROFL -->
+		<script id="light-shader-vs" type="x-shader/x-vertex">
+			attribute vec3 vertexPos;
+			
+			uniform mat4 pvm;
+
+			varying highp float vDepth;
+
+			void main(void){
+				highp vec4 position = pvm * vec4(vertexPos, 1.0);
+				
+				gl_Position = position;
+				
+				vDepth = position.z;
+			}
+		</script>
+		
+		<!-- FRAGMENT SHADER ! LMAO -->
+		<script id="light-shader-fs" type="x-shader/x-fragment">
+			varying highp float vDepth;
+			
+			void main(void){
+				gl_FragColor = vec4(vDepth, vDepth, vDepth, 1.0);
+			}
+		</script>
 		
 		<!-- VERTEX SHADER ! ROFL -->
 		<script id="shader-vs" type="x-shader/x-vertex">
@@ -17,10 +81,8 @@
 			attribute vec3 vertexNormal;
 			
 			uniform mat4 normalMatrix;
-			
 			uniform mat4 pvm;
 			uniform mat4 lightBiasPVM;
-			
 			uniform vec3 lightDirection;
 			
 			varying lowp vec4 vColor;
@@ -28,7 +90,7 @@
 			varying highp vec3 vAmbientLight;
 			
 			varying highp vec4 vShadowCoord;
-
+			
 			void main(void){
 				gl_Position = pvm * vec4(vertexPos, 1.0);
 				vColor = vertexColor;
@@ -44,6 +106,8 @@
 				highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);
 				vLighting = ambientLight + (directionalLightColor * directional);
 				vAmbientLight = ambientLight;
+				
+				vShadowCoord = lightBiasPVM * vec4(vertexPos, 1.0);
 			}
 		</script>
 		
@@ -53,8 +117,19 @@
 			varying highp vec3 vLighting;
 			varying highp vec3 vAmbientLight;
 			
+			varying highp vec4 vShadowCoord;
+			
+			uniform sampler2D lightDepthTexture;
+			
 			void main(void){
-				gl_FragColor = vec4(vColor.rgb * vLighting, vColor.a);
+				highp float shadowDepth = texture2D(lightDepthTexture, vShadowCoord.xy).x;
+				highp float bias = 0.05;
+				
+				if(vShadowCoord.z > shadowDepth+bias){
+					gl_FragColor = vec4(vColor.rgb * vAmbientLight, vColor.a);
+				}else{
+					gl_FragColor = vec4(vColor.rgb * vLighting, vColor.a);
+				}
 			}
 		</script>
 		
@@ -2517,6 +2592,38 @@
 			f 8/0/4 5/0/4 4/0/4
 			f 1/0/5 2/0/5 4/0/5
 			f 8/0/6 7/0/6 5/0/6
+		</script>
+		
+		<script type="text/plain" id="groundObj">
+			# Blender v2.72 (sub 0) OBJ File: ''
+			# www.blender.org
+			v -8.000000 -8.000000 0.000000
+			v 8.000000 -8.000000 0.000000
+			v -8.000000 8.000000 0.000000
+			v 8.000000 8.000000 0.000000
+			v -8.000000 -8.000000 -1.000000
+			v 8.000000 -8.000000 -1.000000
+			v -8.000000 8.000000 -1.000000
+			v 8.000000 8.000000 -1.000000
+			vn 0.000000 0.000000 1.000000
+			vn 0.000000 0.000000 -1.000000
+			vn 0.000000 1.000000 0.000000
+			vn 1.000000 0.000000 0.000000
+			vn 0.000000 -1.000000 0.000000
+			vn -1.000000 0.000000 0.000000
+			s off
+			f 2//1 4//1 3//1
+			f 7//2 8//2 6//2
+			f 8//3 7//3 3//3
+			f 6//4 8//4 4//4
+			f 5//5 6//5 2//5
+			f 7//6 5//6 1//6
+			f 1//1 2//1 3//1
+			f 5//2 7//2 6//2
+			f 4//3 8//3 3//3
+			f 2//4 6//4 4//4
+			f 1//5 5//5 2//5
+			f 3//6 7//6 1//6
 		</script>
 	</head>
 	<body onload="start();">

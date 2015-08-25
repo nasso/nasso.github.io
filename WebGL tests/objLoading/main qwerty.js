@@ -50,10 +50,6 @@ var vertexColorAttribute;
 var vertexNormalAttribute;
 
 // FIX FOR COMPATIBILITY
-function stringContains(str, sample){
-	return str.indexOf(sample) != -1;
-}
-
 function fixCompatibility(){
 	canvas.requestPointerLock = canvas.requestPointerLock ||
 								canvas.mozRequestPointerLock ||
@@ -75,6 +71,10 @@ function fixCompatibility(){
 	document.exitPointerLock = 	document.exitPointerLock    ||
 								document.mozExitPointerLock ||
 								document.webkitExitPointerLock;
+	
+	String.prototype.contains = function(it){
+		return this.indexOf(it) != -1
+	};
 }
 
 function initCanvas(){
@@ -205,17 +205,6 @@ function setUniforms() {
 	gl.uniform3fv(lightUniform, new Float32Array(lightDirection.elements));
 }
 
-function setLightUniforms() {
-	var pUniform = gl.getUniformLocation(lightShaderProgram, "projection");
-	gl.uniformMatrix4fv(pUniform, false, new Float32Array(lightProjection.flatten()));
-	
-	var mUniform = gl.getUniformLocation(lightShaderProgram, "model");
-	gl.uniformMatrix4fv(mUniform, false, new Float32Array(model.flatten()));
-	
-	var vUniform = gl.getUniformLocation(lightShaderProgram, "view");
-	gl.uniformMatrix4fv(vUniform, false, new Float32Array(lightView.flatten()));
-}
-
 function createMesh(vertices, colors, normals, indices, material){
 	var mesh = [];
 	
@@ -268,7 +257,7 @@ function loadObj(id, color, material){
 	for(var i = 0; i < lines.length; i++){
 		var line = lines[i];
 		
-		while(stringContains(line, "\t")){
+		while(line.contains("\t")){
 			line = line.replace("\t", "");
 		}
 		
