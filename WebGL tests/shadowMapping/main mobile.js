@@ -32,7 +32,7 @@ var settings = {
 	fov: 70.0,
 	resolution: {width: 1280, height: 720},
 	ratio: 16/9,
-	shadowMapSize: 2048
+	shadowMapSize: 1024
 };
 
 var controls;
