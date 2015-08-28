@@ -56,23 +56,17 @@
 			uniform mat4 model;
 			uniform mat4 view;
 
-			varying highp float vDepth;
-
 			void main(){
 				highp vec4 position = projection * view * model * vec4(vertexPos, 1.0);
 				
 				gl_Position = position;
-				
-				vDepth = position.z;
 			}
 		</script>
 		
 		<!-- FRAGMENT SHADER ! LMAO -->
 		<script id="light-shader-fs" type="x-shader/x-fragment">
-			varying highp float vDepth;
-			
 			void main(){
-				gl_FragColor = vec4(vDepth, vDepth, vDepth, 1.0);
+				gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
 			}
 		</script>
 		
