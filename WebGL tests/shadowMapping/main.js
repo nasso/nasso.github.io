@@ -349,6 +349,8 @@ function createHUDElement(startX, startY, width, height){
 	
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 	
+	hudel.texture = null;
+	
 	return hudel;
 }
 
@@ -691,6 +693,10 @@ function input(){
 
 var angle = 0.0;
 
+function updateHUD(){
+	hud[0].texture = lightDepthTexture;
+}
+
 function loop(){
 	calcDelta();
 	
@@ -807,6 +813,8 @@ function render(){
 	gl.useProgram(null);
 	
 	// HUD RENDER
+	updateHUD();
+	
 	gl.disable(gl.DEPTH_TEST);
 	gl.useProgram(HUDShaderProgram);
 		gl.enableVertexAttribArray(HUDShaderProgram.attributes.vertexPosition);
@@ -822,7 +830,7 @@ function render(){
 			gl.vertexAttribPointer(HUDShaderProgram.attributes.vertexTextureCoordinate, 2, gl.FLOAT, false, 0, 0);
 			
 			gl.activeTexture(gl.TEXTURE0)
-			gl.bindTexture(gl.TEXTURE_2D, lightDepthTexture);
+			gl.bindTexture(gl.TEXTURE_2D, hudel.texture);
 			gl.uniform1i(HUDShaderProgram.uniforms.uSampler, 0);
 			
 			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, hudel.indicesBuffer);
