@@ -146,7 +146,7 @@
 				highp float visibility = 1.0;
 				
 				for(int i = 0; i < 4; i++){
-					if(texture2D(lightDepthTexture, vShadowCoord.xy + poissonDisk[i]/1800.0).x < vShadowCoord.z-bias){
+					if(texture2D(lightDepthTexture, vShadowCoord.xy + poissonDisk[i]/800.0).x < vShadowCoord.z-bias){
 						visibility -= 0.2;
 					}
 				}
