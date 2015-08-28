@@ -13,11 +13,6 @@ var HUDShaderProgram;
 
 var attributes = [];
 var uniforms = [];
-var lightVertexPositionAttribute;
-
-var vertexPositionAttribute;
-var vertexColorAttribute;
-var vertexNormalAttribute;
 
 var aspectRatio;
 

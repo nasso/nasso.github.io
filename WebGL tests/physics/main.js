@@ -1,3 +1,14 @@
+/*
+
+Things to know:
+
+• Transformation:
+	- First Scale if needed
+	- Then set the direction (rotate)
+	- Then set the position (translate)
+	Or you'll get problems... with... logic and... you'll... rage quit and... JUST DO IT !
+
+*/
 var canvas = null;
 var gl = null;
 var keyState = [];
@@ -27,17 +38,16 @@ var settings = {
 	fov: 70.0,
 	resolution: {width: 1280, height: 720},
 	ratio: 16/9,
-	shadowMapSize: 2048
+	shadowMapSize: 2048,
+	
+	fixedTimeStep: 1.0 / 240.0,
+	maxSubSteps: 3.0
 };
 
 var controls;
 
-var materials = {
-	ground: {name: "ground"},
-	iron: {name: "iron"}
-};
-
 var world = [];
+var cannonWorld = new CANNON.World();
 var hud = [];
 
 var lightDirection = $V([-0.6, -0.4, -1.0]);
@@ -79,33 +89,7 @@ function fixCompatibility(){
 	};
 }
 
-function initCanvas(){
-	var error = false;
-	canvas = $("#canvas")[0];
-	
-	if(!canvas){
-		alert("Error while getting the <canvas> element.");
-		error = true;
-	}else{
-		gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-		
-		if(!gl){
-			alert("Error while getting the <canvas> WebGL context.");
-			error = true;
-		}
-	}
-	
-	if(error){
-		var errorMsg = document.createElement("p");
-		errorMsg.innerHTML = "Your browser isn't compatible :( !";
-		document.body.appendChild(errorMsg);
-		
-		throw new Error("Something went badly wrong :( !");
-	}else{
-		aspectRatio = canvas.width / canvas.height;
-	}
-}
-
+// UTILS
 function getShader(id){
 	var shaderScript, theSource, currentChild, shader;
 	
@@ -245,10 +229,439 @@ function scale(a, x, y, z) {
 		]).ensure4x4().x(a);
 }
 
+// OBJECTS
+
+/* class HUDComponent */ {
+	function HUDComponent(startX, startY, width, height){
+		this.vertices = [
+			startX, startY, // Bottom left
+			startX + width, startY, // Bottom right
+			startX + width, startY + height, // Top right
+			startX, startY + height // Top left
+		];
+		
+		this.textureCoord = [
+			0.0, 0.0,
+			1.0, 0.0,
+			1.0, 1.0,
+			0.0, 1.0
+		];
+		
+		this.indices = [
+			0, 1, 3, 2
+		];
+		
+		this.verticesBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.verticesBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertices), gl.STATIC_DRAW);
+		
+		this.textureCoordBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.textureCoordBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.textureCoord), gl.STATIC_DRAW);
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, null);
+		
+		this.indicesBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indicesBuffer);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.indices), gl.STATIC_DRAW);
+		
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+		
+		this.texture = null;
+		
+		return this;
+	}
+}
+
+/* class Mesh */ {
+	function Mesh(vertices, colors, normals, indices, body){
+		this.vertices = vertices;
+		this.colors = colors;
+		this.normals = normals;
+		this.indices = indices;
+		this.body = body;
+		this.size = indices.length;
+		this.transform = identity();
+		
+		this.verticesBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.verticesBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertices), gl.STATIC_DRAW);
+		
+		this.colorsBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.colorsBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.colors), gl.STATIC_DRAW);
+		
+		this.normalsBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.normalsBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.normals), gl.STATIC_DRAW);
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, null);
+		
+		this.indicesBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indicesBuffer);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.indices), gl.STATIC_DRAW);
+		
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+	}
+
+	Mesh.prototype.identity = function(){
+		this.transform = Matrix.I(4);
+	};
+
+	Mesh.prototype.translate = function(x, y, z){
+		x = x || 0.0;
+		y = y || 0.0;
+		z = z || 0.0;
+		
+		if(x == 0.0 && y == 0.0 && z == 0.0){
+			return;
+		}
+		
+		this.transform = Matrix.Translation($V([x, y, z])).ensure4x4().x(this.transform);
+	};
+
+	Mesh.prototype.rotate = function(angle, x, y, z){
+		angle = angle || 0.0;
+		x = x || 0.0;
+		y = y || 0.0;
+		z = z || 0.0;
+		
+		if(angle == 0.0 || (x == 0.0 && y == 0.0 && z == 0.0)){
+			return;
+		}
+		
+		this.transform = Matrix.Rotation(angle * Math.PI / 180, $V([x, y, z])).ensure4x4().x(this.transform);
+	};
+
+	Mesh.prototype.scale = function(x, y, z){
+		x = x || 0.0;
+		y = y || 0.0;
+		z = z || 0.0;
+		
+		if(x == 0.0 && y == 0.0 && z == 0.0){
+			return;
+		}
+		
+		this.transform = $M([
+				[x, 0, 0, 0],
+				[0, y, 0, 0],
+				[0, 0, z, 0],
+				[0, 0, 0, 1]
+			]).ensure4x4().x(this.transform);
+	};
+	
+	Mesh.prototype.updateBody = function(){
+		this.identity();
+		
+		this.rotate(this.body.torque.x, this.body.torque.y, this.body.torque.z);
+		this.translate(this.body.position.x, this.body.position.y, this.body.position.z);
+	};
+}
+
+// INIT
+function initCanvas(){
+	var error = false;
+	canvas = $("#canvas")[0];
+	
+	if(!canvas){
+		alert("Error while getting the <canvas> element.");
+		error = true;
+	}else{
+		gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+		
+		if(!gl){
+			alert("Error while getting the <canvas> WebGL context.");
+			error = true;
+		}
+	}
+	
+	if(error){
+		var errorMsg = document.createElement("p");
+		errorMsg.innerHTML = "Your browser isn't compatible :( !";
+		document.body.appendChild(errorMsg);
+		
+		throw new Error("Something went badly wrong :( !");
+	}else{
+		aspectRatio = canvas.width / canvas.height;
+	}
+}
+
+function start(){
+	initCanvas();
+	fixCompatibility();
+	
+	init();
+	loop();
+	
+	// Animation
+	window.requestAnimationFrame(loop);
+}
+
+function init(){
+	camera.eye = $V([0.0, 1.0, 1.8]);
+	
+	camera.orientation = $V([0.0, 1.0, 0.0]);
+	
+	camera.center = camera.eye.add(camera.orientation);
+
+	camera.up = $V([0.0, 0.0, 1.0]);
+	
+	// Extension
+	gl.getExtension("WEBGL_depth_texture");
+	
+	initControls();
+	initShaders();
+	initBuffers();
+	initWorld();
+	initCannonWorld();
+	initListeners();
+	
+	//GL
+	gl.clearColor(0.6, 0.8, 1.0, 1.0);
+	gl.enable(gl.DEPTH_TEST);
+	gl.enable(gl.CULL_FACE);
+	gl.depthFunc(gl.LEQUAL);
+}
+
+function initControls(){
+	controls = JSON.parse($("#controls")[0].innerHTML);
+}
+
+function initBuffers(){
+	// Shadow mapping
+	
+	// Color Texture
+	lightColorTexture = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, lightColorTexture);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, settings.shadowMapSize, settings.shadowMapSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+	
+	// Depth Texture
+	lightDepthTexture = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, lightDepthTexture);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, settings.shadowMapSize, settings.shadowMapSize, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, null);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	
+	// Framebuffer
+	lightFrameBuffer = gl.createFramebuffer();
+	gl.bindFramebuffer(gl.FRAMEBUFFER, lightFrameBuffer);
+	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, lightColorTexture, 0);
+	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, lightDepthTexture, 0);
+	
+	gl.bindTexture(gl.TEXTURE_2D, null);
+	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+}
+
+function initShaders(){
+	HUDShaderProgram = createProgram("hud-shader-vs", "hud-shader-fs");
+	
+	gl.useProgram(HUDShaderProgram);
+		// Attributes
+		HUDShaderProgram.attributes.vertexPosition = gl.getAttribLocation(HUDShaderProgram, "vertexPos");
+		HUDShaderProgram.attributes.vertexTextureCoordinate = gl.getAttribLocation(HUDShaderProgram, "textureCoord");
+		
+		// Uniforms
+		HUDShaderProgram.uniforms.uSampler = gl.getUniformLocation(HUDShaderProgram, "uSampler");
+	gl.useProgram(null);
+	
+	lightShaderProgram = createProgram("light-shader-vs", "light-shader-fs");
+	
+	gl.useProgram(lightShaderProgram);
+		// Attributes
+		lightShaderProgram.attributes.vertexPosition = gl.getAttribLocation(lightShaderProgram, "vertexPos");
+		
+		// Uniforms
+		lightShaderProgram.uniforms.pvm = gl.getUniformLocation(lightShaderProgram, "pvm");
+	gl.useProgram(null);
+	
+	shaderProgram = createProgram("shader-vs", "shader-fs");
+	
+	gl.useProgram(shaderProgram);
+		// Attributes
+		shaderProgram.attributes.vertexPosition = gl.getAttribLocation(shaderProgram, "vertexPos");
+		shaderProgram.attributes.vertexColor = gl.getAttribLocation(shaderProgram, "vertexColor");
+		shaderProgram.attributes.vertexNormal = gl.getAttribLocation(shaderProgram, "vertexNormal");
+		
+		// Uniforms
+		shaderProgram.uniforms.lightBiasPVM = gl.getUniformLocation(shaderProgram, "lightBiasPVM");
+		shaderProgram.uniforms.pvm = gl.getUniformLocation(shaderProgram, "pvm");
+		shaderProgram.uniforms.normalMatrix = gl.getUniformLocation(shaderProgram, "normalMatrix");
+		shaderProgram.uniforms.lightDirection = gl.getUniformLocation(shaderProgram, "lightDirection");
+		
+		shaderProgram.uniforms.lightDepthTexture = gl.getUniformLocation(shaderProgram, "lightDepthTexture");
+	gl.useProgram(null);
+}
+
+function initWorld(){
+	// Body of objects
+	var groundBody = new CANNON.Body({
+		mass: 0,
+		shape: new CANNON.Plane()
+	});
+	
+	var suzanneBody = new CANNON.Body({
+		mass: 1,
+		position: new CANNON.Vec3(0, -2, 8),
+		shape: new CANNON.Sphere(1)
+	});
+	
+	var sphereBody = new CANNON.Body({
+		mass: 2,
+		position: new CANNON.Vec3(0, 2, 8),
+		shape: new CANNON.Sphere(1)
+	});
+	
+	cannonWorld.addBody(groundBody);
+	cannonWorld.addBody(suzanneBody);
+	cannonWorld.addBody(sphereBody);
+		
+	// Objects of the world
+	world[0] = loadObj("groundObj", rgbFloat(163, 214, 81), groundBody);
+	world[1] = loadObj("suzanneObj", rgbFloat(247, 209, 59), suzanneBody);
+	world[2] = loadObj("sphereObj", rgbFloat(124, 95, 27), sphereBody);
+	
+	// HUD
+	hud[0] = new HUDComponent(-1.0, -1.0, 512.0 / canvas.width, 512.0 / canvas.height);
+}
+
+function initCannonWorld(){
+	cannonWorld.gravity.set(0, 0, -9.82); // m/s²
+}
+
+function initListeners(){
+	window.addEventListener("keydown", function(e){
+		var e = window.event || e;
+		
+		e.preventDefault();
+		keyState[e.keyCode] = true;
+		directKeyDown(e.keyCode);
+	});
+	
+	window.addEventListener("keyup", function(e){
+		var e = window.event || e;
+		
+		e.preventDefault();
+		keyState[e.keyCode] = false;
+		directKeyUp(e.keyCode);
+	});
+	
+	canvas.addEventListener("mousedown", function(e){
+		if(e.button == 0){
+			canvas.requestPointerLock();
+		}
+	});
+	
+	canvas.addEventListener("mousemove", function(e){
+		if(oldMouseCoordsDirty){
+			mouseCoords.x = e.clientX;
+			mouseCoords.y = e.clientY;
+			oldMouseCoordsDirty = false;
+		}
+		
+		lastMouseCoords.x = mouseCoords.x;
+		lastMouseCoords.y = mouseCoords.y;
+		
+		mouseCoords.x = e.clientX;
+		mouseCoords.y = e.clientY;
+		
+		if(lastMouseCoords.x == null || lastMouseCoords.y == null){
+			lastMouseCoords.x = mouseCoords.x;
+			lastMouseCoords.y = mouseCoords.y;
+			
+			relMouseCoords.x = e.movementX || e.mozMovementX ||e.webkitMovementX || 0;
+			relMouseCoords.y = e.movementY || e.mozMovementY ||e.webkitMovementY || 0;
+		}else{
+			relMouseCoords.x = e.movementX || e.mozMovementX ||e.webkitMovementX || (mouseCoords.x - lastMouseCoords.x);
+			relMouseCoords.y = e.movementY || e.mozMovementY ||e.webkitMovementY || (mouseCoords.y - lastMouseCoords.y);
+		}
+	});
+}
+
+// RENDER STUFF
+var lastUpdate = Date.now();
+var delta = 0;
+
+function directKeyDown(keycode){
+	if(keycode == 122){
+		setFullScreen(canvas);
+		canvas.requestPointerLock();
+		oldMouseCoordsDirty = true;
+		fullscreen = true;
+	}
+}
+
+function directKeyUp(keycode){
+	if(keycode == 27){
+		unsetFullScreen(canvas);
+		document.exitPointerLock();
+		oldMouseCoordsDirty = true;
+		fullscreen = false;
+	}
+}
+
+function calcDelta(){
+	var now = Date.now();
+	delta = (now - lastUpdate) / 1000;
+	lastUpdate = now;
+}
+
+function input(){
+	phi += -relMouseCoords.y * controls.mouseSensitivity;
+	theta += -relMouseCoords.x * controls.mouseSensitivity;
+	
+	relMouseCoords.x = 0;
+	relMouseCoords.y = 0;
+	
+	if(phi > 89) {
+		phi = 89;
+	} else if (phi < -89) {
+		phi = -89;
+	}
+	
+	var phiRadian = phi * Math.PI / 180;
+	var thetaRadian = theta * Math.PI / 180;
+	
+	camera.orientation.elements[0] = Math.cos(phiRadian) * Math.cos(thetaRadian);
+	camera.orientation.elements[1] = Math.cos(phiRadian) * Math.sin(thetaRadian);
+	camera.orientation.elements[2] = Math.sin(phiRadian);
+	camera.orientation = camera.orientation.toUnitVector();
+	
+	camera.orientation2d = $V([camera.orientation.elements[0], camera.orientation.elements[1], 0.0]);
+	var lateral = camera.up.cross(camera.orientation2d).toUnitVector();
+	
+	if(keyState[controls.run]){
+		speed = 2.0;
+	}else{
+		speed = 1.0;
+	}
+	
+	if(keyState[controls.forward]){
+		camera.eye = camera.eye.add(camera.orientation2d.x((speed * 5.0) * delta));
+	}
+	
+	if(keyState[controls.backward]){
+		camera.eye = camera.eye.subtract(camera.orientation2d.x((speed * 5.0) * delta));
+	}
+	
+	if(keyState[controls.strafeLeft]){
+		camera.eye = camera.eye.add(lateral.x((speed * 5.0) * delta));
+	}
+	
+	if(keyState[controls.strafeRight]){
+		camera.eye = camera.eye.subtract(lateral.x((speed * 5.0) * delta));
+	}
+	
+	camera.center = camera.eye.add(camera.orientation);
+}
+
 function setUniforms() {
-	gl.uniformMatrix4fv(shaderProgram.uniforms.projection, false, new Float32Array(projection.flatten()));
-	gl.uniformMatrix4fv(shaderProgram.uniforms.model, false, new Float32Array(model.flatten()));
-	gl.uniformMatrix4fv(shaderProgram.uniforms.view, false, new Float32Array(view.flatten()));
+	gl.uniformMatrix4fv(shaderProgram.uniforms.pvm, false, new Float32Array(projection.x(view).x(model).flatten()));
 	
 	var lightBias = $M([
 		[0.5, 0.0, 0.0, 0.5],
@@ -256,9 +669,7 @@ function setUniforms() {
 		[0.0, 0.0, 0.5, 0.5],
 		[0.0, 0.0, 0.0, 1.0]
 	]);
-	gl.uniformMatrix4fv(shaderProgram.uniforms.lightBias, false, new Float32Array(lightBias.flatten()));
-	gl.uniformMatrix4fv(shaderProgram.uniforms.lightProjection, false, new Float32Array(lightProjection.flatten()));
-	gl.uniformMatrix4fv(shaderProgram.uniforms.lightView, false, new Float32Array(lightView.flatten()));
+	gl.uniformMatrix4fv(shaderProgram.uniforms.lightBiasPVM, false, new Float32Array(lightBias.x(lightProjection.x(lightView).x(model)).flatten()));
 	
 	var normalMatrix = model.inv();
 	normalMatrix = normalMatrix.transpose();
@@ -268,88 +679,10 @@ function setUniforms() {
 }
 
 function setLightUniforms(){
-	gl.uniformMatrix4fv(lightShaderProgram.uniforms.projection, false, new Float32Array(lightProjection.flatten()));
-	gl.uniformMatrix4fv(lightShaderProgram.uniforms.model, false, new Float32Array(model.flatten()));
-	gl.uniformMatrix4fv(lightShaderProgram.uniforms.view, false, new Float32Array(lightView.flatten()));
+	gl.uniformMatrix4fv(lightShaderProgram.uniforms.pvm, false, new Float32Array(lightProjection.x(lightView).x(model).flatten()));
 }
 
-function createMesh(vertices, colors, normals, indices, material){
-	var mesh = [];
-	
-	mesh.vertices = vertices;
-	mesh.colors = colors;
-	mesh.normals = normals;
-	mesh.indices = indices;
-	mesh.size = indices.length;
-	mesh.material = material;
-	mesh.transform = identity();
-	
-	mesh.verticesBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, mesh.verticesBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.vertices), gl.STATIC_DRAW);
-	
-	mesh.colorsBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, mesh.colorsBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.colors), gl.STATIC_DRAW);
-	
-	mesh.normalsBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, mesh.normalsBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.normals), gl.STATIC_DRAW);
-	
-	gl.bindBuffer(gl.ARRAY_BUFFER, null);
-	
-	mesh.indicesBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.indicesBuffer);
-	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(mesh.indices), gl.STATIC_DRAW);
-	
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
-	
-	return mesh;
-}
-
-function createHUDElement(startX, startY, width, height){
-	var hudel = [];
-	
-	hudel.vertices = [
-		startX, startY, // Bottom left
-		startX + width, startY, // Bottom right
-		startX + width, startY + height, // Top right
-		startX, startY + height // Top left
-	];
-	
-	hudel.textureCoord = [
-		0.0, 0.0,
-		1.0, 0.0,
-		1.0, 1.0,
-		0.0, 1.0
-	];
-	
-	hudel.indices = [
-		0, 1, 3, 2
-	];
-	
-	hudel.verticesBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, hudel.verticesBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(hudel.vertices), gl.STATIC_DRAW);
-	
-	hudel.textureCoordBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, hudel.textureCoordBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(hudel.textureCoord), gl.STATIC_DRAW);
-	
-	gl.bindBuffer(gl.ARRAY_BUFFER, null);
-	
-	hudel.indicesBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, hudel.indicesBuffer);
-	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(hudel.indices), gl.STATIC_DRAW);
-	
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
-	
-	hudel.texture = null;
-	
-	return hudel;
-}
-
-function loadObj(id, color, material){
+function loadObj(id, color, body){
 	if(color.length == 3){
 		color = color.concat([1.0]);
 	}
@@ -434,267 +767,14 @@ function loadObj(id, color, material){
 		colors = colors.concat(color);
 	}
 	
-	return createMesh(vertices, colors, normals, faces, material);
+	return new Mesh(vertices, colors, normals, faces, body);
 }
-
-function start(){
-	initCanvas();
-	fixCompatibility();
-	
-	init();
-	loop();
-	
-	// Animation
-	window.requestAnimationFrame(loop);
-}
-
-function init(){
-	camera.eye = $V([0.0, 1.0, 1.8]);
-	
-	camera.orientation = $V([0.0, 1.0, 0.0]);
-	
-	camera.center = camera.eye.add(camera.orientation);
-
-	camera.up = $V([0.0, 0.0, 1.0]);
-	
-	// Extension
-	gl.getExtension("WEBGL_depth_texture");
-	
-	initControls();
-	initShaders();
-	initBuffers();
-	initListeners();
-	
-	//GL
-	gl.clearColor(0.6, 0.8, 1.0, 1.0);
-	gl.enable(gl.DEPTH_TEST);
-	gl.enable(gl.CULL_FACE);
-	gl.depthFunc(gl.LEQUAL);
-}
-
-function initControls(){
-	controls = JSON.parse($("#controls")[0].innerHTML);
-}
-
-function initBuffers(){
-	// Shadow mapping
-	
-	// Color Texture
-	lightColorTexture = gl.createTexture();
-	gl.bindTexture(gl.TEXTURE_2D, lightColorTexture);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, settings.shadowMapSize, settings.shadowMapSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-	
-	// Depth Texture
-	lightDepthTexture = gl.createTexture();
-	gl.bindTexture(gl.TEXTURE_2D, lightDepthTexture);
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, settings.shadowMapSize, settings.shadowMapSize, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, null);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-	
-	// Framebuffer
-	lightFrameBuffer = gl.createFramebuffer();
-	gl.bindFramebuffer(gl.FRAMEBUFFER, lightFrameBuffer);
-	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, lightColorTexture, 0);
-	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, lightDepthTexture, 0);
-	
-	gl.bindTexture(gl.TEXTURE_2D, null);
-	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-	
-	// Objects of the scene
-	world[0] = loadObj("groundObj", rgbFloat(163, 214, 81), materials.ground);
-	world[1] = loadObj("suzanneObj", rgbFloat(247, 209, 59), materials.iron);
-	world[2] = loadObj("sphereObj", rgbFloat(124, 95, 27), materials.ground);
-	
-	// HUD
-	hud[0] = createHUDElement(-1.0, -1.0, 512.0 / canvas.width, 512.0 / canvas.height);
-}
-
-function initShaders(){
-	HUDShaderProgram = createProgram("hud-shader-vs", "hud-shader-fs");
-	
-	gl.useProgram(HUDShaderProgram);
-		// Attributes
-		HUDShaderProgram.attributes.vertexPosition = gl.getAttribLocation(HUDShaderProgram, "vertexPos");
-		HUDShaderProgram.attributes.vertexTextureCoordinate = gl.getAttribLocation(HUDShaderProgram, "textureCoord");
-		
-		// Uniforms
-		HUDShaderProgram.uniforms.uSampler = gl.getUniformLocation(HUDShaderProgram, "uSampler");
-	gl.useProgram(null);
-	
-	lightShaderProgram = createProgram("light-shader-vs", "light-shader-fs");
-	
-	gl.useProgram(lightShaderProgram);
-		// Attributes
-		lightShaderProgram.attributes.vertexPosition = gl.getAttribLocation(lightShaderProgram, "vertexPos");
-		
-		// Uniforms
-		lightShaderProgram.uniforms.projection = gl.getUniformLocation(lightShaderProgram, "projection");
-		lightShaderProgram.uniforms.model = gl.getUniformLocation(lightShaderProgram, "model");
-		lightShaderProgram.uniforms.view = gl.getUniformLocation(lightShaderProgram, "view");
-	gl.useProgram(null);
-	
-	shaderProgram = createProgram("shader-vs", "shader-fs");
-	
-	gl.useProgram(shaderProgram);
-		// Attributes
-		shaderProgram.attributes.vertexPosition = gl.getAttribLocation(shaderProgram, "vertexPos");
-		shaderProgram.attributes.vertexColor = gl.getAttribLocation(shaderProgram, "vertexColor");
-		shaderProgram.attributes.vertexNormal = gl.getAttribLocation(shaderProgram, "vertexNormal");
-		
-		// Uniforms
-		shaderProgram.uniforms.lightBias = gl.getUniformLocation(shaderProgram, "lightBias");
-		shaderProgram.uniforms.lightProjection = gl.getUniformLocation(shaderProgram, "lightProjection");
-		shaderProgram.uniforms.lightView = gl.getUniformLocation(shaderProgram, "lightView");
-		shaderProgram.uniforms.projection = gl.getUniformLocation(shaderProgram, "projection");
-		shaderProgram.uniforms.model = gl.getUniformLocation(shaderProgram, "model");
-		shaderProgram.uniforms.view = gl.getUniformLocation(shaderProgram, "view");
-		shaderProgram.uniforms.normalMatrix = gl.getUniformLocation(shaderProgram, "normalMatrix");
-		shaderProgram.uniforms.lightDirection = gl.getUniformLocation(shaderProgram, "lightDirection");
-		
-		shaderProgram.uniforms.lightDepthTexture = gl.getUniformLocation(shaderProgram, "lightDepthTexture");
-	gl.useProgram(null);
-}
-
-function initListeners(){
-	window.addEventListener("keydown", function(e){
-		var e = window.event || e;
-		
-		e.preventDefault();
-		keyState[e.keyCode] = true;
-		directKeyDown(e.keyCode);
-	});
-	
-	window.addEventListener("keyup", function(e){
-		var e = window.event || e;
-		
-		e.preventDefault();
-		keyState[e.keyCode] = false;
-		directKeyUp(e.keyCode);
-	});
-	
-	canvas.addEventListener("mousedown", function(e){
-		if(e.button == 0){
-			canvas.requestPointerLock();
-		}
-	});
-	
-	canvas.addEventListener("mousemove", function(e){
-		if(oldMouseCoordsDirty){
-			mouseCoords.x = e.clientX;
-			mouseCoords.y = e.clientY;
-			oldMouseCoordsDirty = false;
-		}
-		
-		lastMouseCoords.x = mouseCoords.x;
-		lastMouseCoords.y = mouseCoords.y;
-		
-		mouseCoords.x = e.clientX;
-		mouseCoords.y = e.clientY;
-		
-		if(lastMouseCoords.x == null || lastMouseCoords.y == null){
-			lastMouseCoords.x = mouseCoords.x;
-			lastMouseCoords.y = mouseCoords.y;
-			
-			relMouseCoords.x = e.movementX || e.mozMovementX ||e.webkitMovementX || 0;
-			relMouseCoords.y = e.movementY || e.mozMovementY ||e.webkitMovementY || 0;
-		}else{
-			relMouseCoords.x = e.movementX || e.mozMovementX ||e.webkitMovementX || (mouseCoords.x - lastMouseCoords.x);
-			relMouseCoords.y = e.movementY || e.mozMovementY ||e.webkitMovementY || (mouseCoords.y - lastMouseCoords.y);
-		}
-	});
-}
-
-var lastUpdate = Date.now();
-var delta = 0;
-
-function directKeyDown(keycode){
-	if(keycode == 122){
-		setFullScreen(canvas);
-		canvas.requestPointerLock();
-		oldMouseCoordsDirty = true;
-		fullscreen = true;
-	}
-}
-
-function directKeyUp(keycode){
-	if(keycode == 27){
-		unsetFullScreen(canvas);
-		document.exitPointerLock();
-		oldMouseCoordsDirty = true;
-		fullscreen = false;
-	}
-}
-
-function calcDelta(){
-	var now = Date.now();
-	delta = now - lastUpdate;
-	lastUpdate = now;
-}
-
-function input(){
-	phi += -relMouseCoords.y * controls.mouseSensitivity;
-	theta += -relMouseCoords.x * controls.mouseSensitivity;
-	
-	relMouseCoords.x = 0;
-	relMouseCoords.y = 0;
-	
-	if(phi > 89) {
-		phi = 89;
-	} else if (phi < -89) {
-		phi = -89;
-	}
-	
-	var phiRadian = phi * Math.PI / 180;
-	var thetaRadian = theta * Math.PI / 180;
-	
-	camera.orientation.elements[0] = Math.cos(phiRadian) * Math.cos(thetaRadian);
-	camera.orientation.elements[1] = Math.cos(phiRadian) * Math.sin(thetaRadian);
-	camera.orientation.elements[2] = Math.sin(phiRadian);
-	camera.orientation = camera.orientation.toUnitVector();
-	
-	camera.orientation2d = $V([camera.orientation.elements[0], camera.orientation.elements[1], 0.0]);
-	var lateral = camera.up.cross(camera.orientation2d).toUnitVector();
-	
-	if(keyState[controls.run]){
-		speed = 1.0;
-	}else{
-		speed = 0.5;
-	}
-	
-	if(keyState[controls.forward]){
-		camera.eye = camera.eye.add(camera.orientation2d.x((speed * 0.01) * delta));
-	}
-	
-	if(keyState[controls.backward]){
-		camera.eye = camera.eye.subtract(camera.orientation2d.x((speed * 0.01) * delta));
-	}
-	
-	if(keyState[controls.strafeLeft]){
-		camera.eye = camera.eye.add(lateral.x((speed * 0.01) * delta));
-	}
-	
-	if(keyState[controls.strafeRight]){
-		camera.eye = camera.eye.subtract(lateral.x((speed * 0.01) * delta));
-	}
-	
-	camera.center = camera.eye.add(camera.orientation);
-}
-
-var angle = 0.0;
 
 function updateHUD(){
 	hud[0].texture = lightDepthTexture;
 }
 
 function loop(){
-	calcDelta();
-	
 	if(canvas.width != settings.resolution.width){
 		canvas.width = settings.resolution.width;
 	}
@@ -702,25 +782,14 @@ function loop(){
 		canvas.height = settings.resolution.height;
 	}
 	
-	angle += 0.1 * delta;
+	calcDelta();
+	cannonWorld.step(settings.fixedTimeStep, delta, settings.maxSubSteps);
 	
-	if(angle > 360.0){
-		angle -= 360.0;
-	}else if(angle < 0.0){
-		angle += 360.0;
-	}
+	world[0].updateBody();
 	
-	world[1].transform = identity();
+	world[1].updateBody();
 	
-	world[1].transform = scale(world[1].transform, 0.6, 0.6, 0.6);
-	world[1].transform = rotate(world[1].transform, angle, 0.0, 0.0, 1.0);
-	
-	world[2].transform = identity();
-	
-	world[2].transform = scale(world[2].transform, 0.5, 0.5, 0.5);
-	world[2].transform = rotate(world[2].transform, angle, 0.0, 0.0, 1.0);
-	world[2].transform = rotate(world[2].transform, angle, 1.0, 0.0, 0.0);
-	world[2].transform = translate(world[2].transform, 2.0, 0.0, 1.0);
+	world[2].updateBody();
 	
 	input();
 	render();
@@ -769,13 +838,9 @@ function render(){
 	
 	projection = makePerspective(settings.fov, settings.ratio, 0.1, 1000.0);
 	
-	// view = makeLookAt(	camera.eye.elements[0], camera.eye.elements[1], camera.eye.elements[2],
-						// camera.center.elements[0], camera.center.elements[1], camera.center.elements[2],
-						// camera.up.elements[0], camera.up.elements[1], camera.up.elements[2]);
-	
-	view = makeLookAt(	3.0, 3.0, 2.0,
-						0.0, 0.0, 0.0,
-						0.0, 0.0, 1.0);
+	view = makeLookAt(	camera.eye.elements[0], camera.eye.elements[1], camera.eye.elements[2],
+						camera.center.elements[0], camera.center.elements[1], camera.center.elements[2],
+						camera.up.elements[0], camera.up.elements[1], camera.up.elements[2]);
 	
 	gl.viewport(0, 0, canvas.width, canvas.height);
 	gl.useProgram(shaderProgram);

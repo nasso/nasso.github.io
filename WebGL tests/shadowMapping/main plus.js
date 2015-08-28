@@ -25,9 +25,9 @@ var view = null;
 
 var settings = {
 	fov: 70.0,
-	resolution: {width: 1280, height: 720},
+	resolution: {width: 1920, height: 1080},
 	ratio: 16/9,
-	shadowMapSize: 2048
+	shadowMapSize: 4096
 };
 
 var controls;
@@ -769,13 +769,9 @@ function render(){
 	
 	projection = makePerspective(settings.fov, settings.ratio, 0.1, 1000.0);
 	
-	// view = makeLookAt(	camera.eye.elements[0], camera.eye.elements[1], camera.eye.elements[2],
-						// camera.center.elements[0], camera.center.elements[1], camera.center.elements[2],
-						// camera.up.elements[0], camera.up.elements[1], camera.up.elements[2]);
-	
-	view = makeLookAt(	3.0, 3.0, 2.0,
-						0.0, 0.0, 0.0,
-						0.0, 0.0, 1.0);
+	view = makeLookAt(	camera.eye.elements[0], camera.eye.elements[1], camera.eye.elements[2],
+						camera.center.elements[0], camera.center.elements[1], camera.center.elements[2],
+						camera.up.elements[0], camera.up.elements[1], camera.up.elements[2]);
 	
 	gl.viewport(0, 0, canvas.width, canvas.height);
 	gl.useProgram(shaderProgram);

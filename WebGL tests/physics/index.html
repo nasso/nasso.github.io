@@ -2,12 +2,13 @@
 
 <html>
 	<head>
-		<title>WebGL shadow mapping</title>
+		<title>WebGL physics (WIP)</title>
 		<meta charset="utf-8">
 		<link rel="stylesheet" href="../css/style.css" type="text/css">
 		<script type="text/javascript" src="../lib/jquery.js"></script>
 		<script type="text/javascript" src="../lib/sylvester.js"></script>
 		<script type="text/javascript" src="../lib/glUtils.js"></script>
+		<script type="text/javascript" src="../lib/cannon.js"></script>
 		<script type="text/javascript" src="main.js"></script>
 		
 		<script type="application/json" id="controls">
@@ -52,27 +53,19 @@
 		<script id="light-shader-vs" type="x-shader/x-vertex">
 			attribute vec3 vertexPos;
 			
-			uniform mat4 projection;
-			uniform mat4 model;
-			uniform mat4 view;
-
-			varying highp float vDepth;
-
+			uniform mat4 pvm;
+			
 			void main(){
-				highp vec4 position = projection * view * model * vec4(vertexPos, 1.0);
+				highp vec4 position = pvm * vec4(vertexPos, 1.0);
 				
 				gl_Position = position;
-				
-				vDepth = position.z;
 			}
 		</script>
 		
 		<!-- FRAGMENT SHADER ! LMAO -->
 		<script id="light-shader-fs" type="x-shader/x-fragment">
-			varying highp float vDepth;
-			
 			void main(){
-				gl_FragColor = vec4(vDepth, vDepth, vDepth, 1.0);
+				gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
 			}
 		</script>
 		
@@ -83,12 +76,8 @@
 			attribute vec3 vertexNormal;
 			
 			uniform mat4 normalMatrix;
-			uniform mat4 projection;
-			uniform mat4 model;
-			uniform mat4 view;
-			uniform mat4 lightBias;
-			uniform mat4 lightProjection;
-			uniform mat4 lightView;
+			uniform mat4 pvm;
+			uniform mat4 lightBiasPVM;
 			uniform vec3 lightDirection;
 			
 			varying lowp vec4 vColor;
@@ -99,7 +88,7 @@
 			varying highp vec4 vShadowCoord;
 			
 			void main(){
-				gl_Position = projection * view * model * vec4(vertexPos, 1.0);
+				gl_Position = pvm * vec4(vertexPos, 1.0);
 				vColor = vertexColor;
 				
 				// Apply lighting effect
@@ -114,7 +103,7 @@
 				vAmbientLight = ambientLight;
 				vCosTheta = clamp(dot(transformedNormal.xyz, directionalVector), 0.0, 0.5);
 				
-				vShadowCoord = lightBias * lightProjection * lightView * model * vec4(vertexPos, 1.0);
+				vShadowCoord = lightBiasPVM * vec4(vertexPos, 1.0);
 			}
 		</script>
 		

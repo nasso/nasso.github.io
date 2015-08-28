@@ -8,7 +8,7 @@
 		<script type="text/javascript" src="../lib/jquery.js"></script>
 		<script type="text/javascript" src="../lib/sylvester.js"></script>
 		<script type="text/javascript" src="../lib/glUtils.js"></script>
-		<script type="text/javascript" src="main.js"></script>
+		<script type="text/javascript" src="main plus.js"></script>
 		
 		<script type="application/json" id="controls">
 			{
@@ -146,7 +146,7 @@
 				highp float visibility = 1.0;
 				
 				for(int i = 0; i < 4; i++){
-					if(texture2D(lightDepthTexture, vShadowCoord.xy + poissonDisk[i]/1600.0).x < vShadowCoord.z-bias){
+					if(texture2D(lightDepthTexture, vShadowCoord.xy + poissonDisk[i]/2400.0).x < vShadowCoord.z-bias){
 						visibility -= 0.2;
 					}
 				}
@@ -2823,7 +2823,7 @@
 		</script>
 	</head>
 	<body onload="start();">
-		<canvas id="canvas" width="1280" height="720">
+		<canvas id="canvas" width="1920" height="1080">
 			Your browser doesn't support &lt;canvas&gt; HTML5 feature.
 		</canvas>
 	</body>
