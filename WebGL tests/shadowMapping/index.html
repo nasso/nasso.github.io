@@ -30,7 +30,7 @@
 			
 			varying highp vec2 vTextureCoord;
 
-			void main(void){
+			void main(){
 				gl_Position = vec4(vertexPos, 1.0, 1.0);
 				
 				vTextureCoord = textureCoord;
@@ -43,7 +43,7 @@
 			
 			uniform sampler2D uSampler;
 			
-			void main(void){
+			void main(){
 				gl_FragColor = vec4(texture2D(uSampler, vTextureCoord).rgba);
 			}
 		</script>
@@ -52,12 +52,14 @@
 		<script id="light-shader-vs" type="x-shader/x-vertex">
 			attribute vec3 vertexPos;
 			
-			uniform mat4 pvm;
+			uniform mat4 projection;
+			uniform mat4 model;
+			uniform mat4 view;
 
 			varying highp float vDepth;
 
-			void main(void){
-				highp vec4 position = pvm * vec4(vertexPos, 1.0);
+			void main(){
+				highp vec4 position = projection * view * model * vec4(vertexPos, 1.0);
 				
 				gl_Position = position;
 				
@@ -69,7 +71,7 @@
 		<script id="light-shader-fs" type="x-shader/x-fragment">
 			varying highp float vDepth;
 			
-			void main(void){
+			void main(){
 				gl_FragColor = vec4(vDepth, vDepth, vDepth, 1.0);
 			}
 		</script>
@@ -81,33 +83,38 @@
 			attribute vec3 vertexNormal;
 			
 			uniform mat4 normalMatrix;
-			uniform mat4 pvm;
-			uniform mat4 lightBiasPVM;
+			uniform mat4 projection;
+			uniform mat4 model;
+			uniform mat4 view;
+			uniform mat4 lightBias;
+			uniform mat4 lightProjection;
+			uniform mat4 lightView;
 			uniform vec3 lightDirection;
 			
 			varying lowp vec4 vColor;
 			varying highp vec3 vLighting;
 			varying highp vec3 vAmbientLight;
-			
+			varying highp float vCosTheta;
+
 			varying highp vec4 vShadowCoord;
 			
-			void main(void){
-				gl_Position = pvm * vec4(vertexPos, 1.0);
+			void main(){
+				gl_Position = projection * view * model * vec4(vertexPos, 1.0);
 				vColor = vertexColor;
 				
 				// Apply lighting effect
 
-				highp vec3 ambientLight = vec3(0.4, 0.4, 0.4);
-				highp vec3 directionalLightColor = vec3(0.6, 0.6, 0.6);
+				highp vec3 ambientLight = vec3(0.45, 0.4, 0.45);
+				highp vec3 directionalLightColor = vec3(0.45, 0.45, 0.4);
 				highp vec3 directionalVector = lightDirection * -1.0;
 
-				highp vec4 transformedNormal = normalMatrix * vec4(vertexNormal, 1.0);
-
-				highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);
-				vLighting = ambientLight + (directionalLightColor * directional);
+				highp vec4 transformedNormal = normalMatrix * vec4(vertexNormal, 2.0);
+				highp float directional = clamp(dot(transformedNormal.xyz, directionalVector), 0.0, 2.0);
+				vLighting = directionalLightColor * directional;
 				vAmbientLight = ambientLight;
+				vCosTheta = clamp(dot(transformedNormal.xyz, directionalVector), 0.0, 0.5);
 				
-				vShadowCoord = lightBiasPVM * vec4(vertexPos, 1.0);
+				vShadowCoord = lightBias * lightProjection * lightView * model * vec4(vertexPos, 1.0);
 			}
 		</script>
 		
@@ -116,20 +123,35 @@
 			varying lowp vec4 vColor;
 			varying highp vec3 vLighting;
 			varying highp vec3 vAmbientLight;
+			varying highp float vCosTheta;
 			
 			varying highp vec4 vShadowCoord;
 			
 			uniform sampler2D lightDepthTexture;
 			
-			void main(void){
-				highp float shadowDepth = texture2D(lightDepthTexture, vShadowCoord.xy).x;
-				highp float bias = 0.05;
+			void main(){
+				highp float bias = 0.005 * tan(acos(vCosTheta));
+				bias = clamp(bias, 0.0, 1.0);
 				
-				if(vShadowCoord.z > shadowDepth+bias){
-					gl_FragColor = vec4(vColor.rgb * vAmbientLight, vColor.a);
-				}else{
-					gl_FragColor = vec4(vColor.rgb * vLighting, vColor.a);
+				highp vec2 poissonDisk[8];
+				poissonDisk[0] = vec2(-0.02122013, -0.006128885);
+				poissonDisk[1] = vec2(0.5648766, 0.5561424);
+				poissonDisk[2] = vec2(0.2652976, -0.7267805);
+				poissonDisk[3] = vec2(-0.5816646, -0.6707885);
+				poissonDisk[4] = vec2(-0.3506662, 0.4821354);
+				poissonDisk[5] = vec2(0.8141245, -0.1356266);
+				poissonDisk[6] = vec2(-0.8547717, -0.1485736);
+				poissonDisk[7] = vec2(0.1537051, 0.8777892);
+				
+				highp float visibility = 1.0;
+				
+				for(int i = 0; i < 4; i++){
+					if(texture2D(lightDepthTexture, vShadowCoord.xy + poissonDisk[i]/1800.0).x < vShadowCoord.z-bias){
+						visibility -= 0.2;
+					}
 				}
+				
+				gl_FragColor = vec4(vColor.rgb * (vAmbientLight + (vLighting * visibility)), vColor.a);
 			}
 		</script>
 		
@@ -2560,38 +2582,212 @@
 			f 505//946 323//946 391//946
 		</script>
 		
-		<script type="text/plain" id="cubeObj">
+		<script type="text/plain" id="sphereObj">
 			# Blender v2.72 (sub 0) OBJ File: ''
 			# www.blender.org
-			mtllib cube.mtl
-			v 1.000000 0.000000 -1.000000
-			v 1.000000 0.000000 1.000000
-			v -1.000000 0.000000 1.000000
-			v -1.000000 0.000000 -1.000000
-			v 1.000000 2.000000 -1.000000
-			v 1.000000 2.000000 1.000000
-			v -1.000000 2.000000 1.000000
-			v -1.000000 2.000000 -1.000000
-			vn 1.000000 0.000000 0.000000
-			vn 0.000000 0.000000 1.000000
-			vn -1.000000 0.000000 0.000000
-			vn 0.000000 0.000000 -1.000000
-			vn 0.000000 -1.000000 0.000000
-			vn 0.000000 1.000000 0.000000
-			usemtl Material.001
+			v 0.000000 0.000000 -1.000000
+			v 0.723607 -0.525725 -0.447220
+			v -0.276388 -0.850649 -0.447220
+			v -0.894426 0.000000 -0.447216
+			v -0.276388 0.850649 -0.447220
+			v 0.723607 0.525725 -0.447220
+			v 0.276388 -0.850649 0.447220
+			v -0.723607 -0.525725 0.447220
+			v -0.723607 0.525725 0.447220
+			v 0.276388 0.850649 0.447220
+			v 0.894426 0.000000 0.447216
+			v 0.000000 0.000000 1.000000
+			v -0.162456 -0.499995 -0.850654
+			v 0.425323 -0.309011 -0.850654
+			v 0.262869 -0.809012 -0.525738
+			v 0.850648 0.000000 -0.525736
+			v 0.425323 0.309011 -0.850654
+			v -0.525730 0.000000 -0.850652
+			v -0.688189 -0.499997 -0.525736
+			v -0.162456 0.499995 -0.850654
+			v -0.688189 0.499997 -0.525736
+			v 0.262869 0.809012 -0.525738
+			v 0.951058 -0.309013 0.000000
+			v 0.951058 0.309013 0.000000
+			v 0.000000 -1.000000 0.000000
+			v 0.587786 -0.809017 0.000000
+			v -0.951058 -0.309013 0.000000
+			v -0.587786 -0.809017 0.000000
+			v -0.587786 0.809017 0.000000
+			v -0.951058 0.309013 0.000000
+			v 0.587786 0.809017 0.000000
+			v 0.000000 1.000000 0.000000
+			v 0.688189 -0.499997 0.525736
+			v -0.262869 -0.809012 0.525738
+			v -0.850648 0.000000 0.525736
+			v -0.262869 0.809012 0.525738
+			v 0.688189 0.499997 0.525736
+			v 0.162456 -0.499995 0.850654
+			v 0.525730 0.000000 0.850652
+			v -0.425323 -0.309011 0.850654
+			v -0.425323 0.309011 0.850654
+			v 0.162456 0.499995 0.850654
+			vn 0.102400 -0.315100 -0.943500
+			vn 0.700200 -0.268000 -0.661700
+			vn -0.268000 -0.194700 -0.943500
+			vn -0.268000 0.194700 -0.943500
+			vn 0.102400 0.315100 -0.943500
+			vn 0.905000 -0.268000 -0.330400
+			vn 0.024700 -0.943500 -0.330400
+			vn -0.889700 -0.315100 -0.330400
+			vn -0.574600 0.748800 -0.330400
+			vn 0.534600 0.777900 -0.330400
+			vn 0.802600 -0.583100 -0.125600
+			vn -0.306600 -0.943500 -0.125600
+			vn -0.992100 0.000000 -0.125600
+			vn -0.306600 0.943500 -0.125600
+			vn 0.802600 0.583100 -0.125600
+			vn 0.408900 -0.628400 0.661700
+			vn -0.471300 -0.583100 0.661700
+			vn -0.700200 0.268000 0.661700
+			vn 0.038500 0.748800 0.661700
+			vn 0.724000 0.194700 0.661700
+			vn -0.038500 -0.748800 -0.661700
+			vn 0.187600 -0.577300 -0.794700
+			vn 0.471300 -0.583100 -0.661700
+			vn 0.700200 0.268000 -0.661700
+			vn 0.607100 0.000000 -0.794700
+			vn 0.331300 0.000000 -0.943500
+			vn -0.724000 -0.194700 -0.661700
+			vn -0.491100 -0.356800 -0.794700
+			vn -0.408900 -0.628400 -0.661700
+			vn -0.408900 0.628400 -0.661700
+			vn -0.491100 0.356800 -0.794700
+			vn -0.724000 0.194700 -0.661700
+			vn 0.471300 0.583100 -0.661700
+			vn 0.187600 0.577300 -0.794700
+			vn -0.038500 0.748800 -0.661700
+			vn 0.992100 0.000000 0.125600
+			vn 0.982200 0.000000 -0.187600
+			vn 0.905000 0.268000 -0.330400
+			vn 0.306600 -0.943500 0.125600
+			vn 0.303500 -0.934200 -0.187600
+			vn 0.534600 -0.777900 -0.330400
+			vn -0.802600 -0.583100 0.125600
+			vn -0.794700 -0.577300 -0.187600
+			vn -0.574600 -0.748800 -0.330400
+			vn -0.802600 0.583100 0.125600
+			vn -0.794700 0.577300 -0.187600
+			vn -0.889700 0.315100 -0.330400
+			vn 0.306600 0.943500 0.125600
+			vn 0.303500 0.934200 -0.187600
+			vn 0.024700 0.943500 -0.330400
+			vn 0.574600 -0.748800 0.330400
+			vn 0.794700 -0.577300 0.187600
+			vn 0.889700 -0.315100 0.330400
+			vn -0.534600 -0.777900 0.330400
+			vn -0.303500 -0.934200 0.187600
+			vn -0.024700 -0.943500 0.330400
+			vn -0.905000 0.268000 0.330400
+			vn -0.982200 0.000000 0.187600
+			vn -0.905000 -0.268000 0.330400
+			vn -0.024700 0.943500 0.330400
+			vn -0.303500 0.934200 0.187600
+			vn -0.534600 0.777900 0.330400
+			vn 0.889700 0.315100 0.330400
+			vn 0.794700 0.577300 0.187600
+			vn 0.574600 0.748800 0.330400
+			vn 0.268000 -0.194700 0.943500
+			vn 0.491100 -0.356800 0.794700
+			vn 0.724000 -0.194700 0.661700
+			vn -0.102400 -0.315100 0.943500
+			vn -0.187600 -0.577300 0.794700
+			vn 0.038500 -0.748800 0.661700
+			vn -0.331300 0.000000 0.943500
+			vn -0.607100 0.000000 0.794700
+			vn -0.700200 -0.268000 0.661700
+			vn -0.102400 0.315100 0.943500
+			vn -0.187600 0.577300 0.794700
+			vn -0.471300 0.583100 0.661700
+			vn 0.268000 0.194700 0.943500
+			vn 0.491100 0.356800 0.794700
+			vn 0.408900 0.628400 0.661700
 			s off
-			f 6/0/1 2/0/1 1/0/1
-			f 7/0/2 3/0/2 2/0/2
-			f 8/0/3 4/0/3 3/0/3
-			f 5/0/4 1/0/4 4/0/4
-			f 2/0/5 3/0/5 4/0/5
-			f 7/0/6 6/0/6 5/0/6
-			f 5/0/1 6/0/1 1/0/1
-			f 6/0/2 7/0/2 2/0/2
-			f 7/0/3 8/0/3 3/0/3
-			f 8/0/4 5/0/4 4/0/4
-			f 1/0/5 2/0/5 4/0/5
-			f 8/0/6 7/0/6 5/0/6
+			f 1//1 14//1 13//1
+			f 2//2 14//2 16//2
+			f 1//3 13//3 18//3
+			f 1//4 18//4 20//4
+			f 1//5 20//5 17//5
+			f 2//6 16//6 23//6
+			f 3//7 15//7 25//7
+			f 4//8 19//8 27//8
+			f 5//9 21//9 29//9
+			f 6//10 22//10 31//10
+			f 2//11 23//11 26//11
+			f 3//12 25//12 28//12
+			f 4//13 27//13 30//13
+			f 5//14 29//14 32//14
+			f 6//15 31//15 24//15
+			f 7//16 33//16 38//16
+			f 8//17 34//17 40//17
+			f 9//18 35//18 41//18
+			f 10//19 36//19 42//19
+			f 11//20 37//20 39//20
+			f 13//21 15//21 3//21
+			f 13//22 14//22 15//22
+			f 14//23 2//23 15//23
+			f 16//24 17//24 6//24
+			f 16//25 14//25 17//25
+			f 14//26 1//26 17//26
+			f 18//27 19//27 4//27
+			f 18//28 13//28 19//28
+			f 13//29 3//29 19//29
+			f 20//30 21//30 5//30
+			f 20//31 18//31 21//31
+			f 18//32 4//32 21//32
+			f 17//33 22//33 6//33
+			f 17//34 20//34 22//34
+			f 20//35 5//35 22//35
+			f 23//36 24//36 11//36
+			f 23//37 16//37 24//37
+			f 16//38 6//38 24//38
+			f 25//39 26//39 7//39
+			f 25//40 15//40 26//40
+			f 15//41 2//41 26//41
+			f 27//42 28//42 8//42
+			f 27//43 19//43 28//43
+			f 19//44 3//44 28//44
+			f 29//45 30//45 9//45
+			f 29//46 21//46 30//46
+			f 21//47 4//47 30//47
+			f 31//48 32//48 10//48
+			f 31//49 22//49 32//49
+			f 22//50 5//50 32//50
+			f 26//51 33//51 7//51
+			f 26//52 23//52 33//52
+			f 23//53 11//53 33//53
+			f 28//54 34//54 8//54
+			f 28//55 25//55 34//55
+			f 25//56 7//56 34//56
+			f 30//57 35//57 9//57
+			f 30//58 27//58 35//58
+			f 27//59 8//59 35//59
+			f 32//60 36//60 10//60
+			f 32//61 29//61 36//61
+			f 29//62 9//62 36//62
+			f 24//63 37//63 11//63
+			f 24//64 31//64 37//64
+			f 31//65 10//65 37//65
+			f 38//66 39//66 12//66
+			f 38//67 33//67 39//67
+			f 33//68 11//68 39//68
+			f 40//69 38//69 12//69
+			f 40//70 34//70 38//70
+			f 34//71 7//71 38//71
+			f 41//72 40//72 12//72
+			f 41//73 35//73 40//73
+			f 35//74 8//74 40//74
+			f 42//75 41//75 12//75
+			f 42//76 36//76 41//76
+			f 36//77 9//77 41//77
+			f 39//78 42//78 12//78
+			f 39//79 37//79 42//79
+			f 37//80 10//80 42//80
 		</script>
 		
 		<script type="text/plain" id="groundObj">

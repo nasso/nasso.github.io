@@ -32,7 +32,7 @@ var settings = {
 	fov: 70.0,
 	resolution: {width: 1280, height: 720},
 	ratio: 16/9,
-	shadowMapSize: 1024
+	shadowMapSize: 2048
 };
 
 var controls;
@@ -196,37 +196,64 @@ function identity() {
 	return Matrix.I(4);
 }
 
-function translate(a, v) {
+function translate(a, x, y, z) {
 	if(a == null){
 		a = identity();
 	}
 	
-	return a.x(Matrix.Translation($V([v[0], v[1], v[2]])).ensure4x4());
+	x = x || 0.0;
+	y = y || 0.0;
+	z = z || 0.0;
+	
+	if(x == 0.0 && y == 0.0 && z == 0.0){
+		return a;
+	}
+	
+	return Matrix.Translation($V([x, y, z])).ensure4x4().x(a);
 }
 
-function rotate(a, angle, v) {
+function rotate(a, angle, x, y, z) {
 	if(a == null){
 		a = identity();
 	}
 	
-	return a.x(Matrix.Rotation(angle * Math.PI / 180, $V([v[0], v[1], v[2]])).ensure4x4());
+	angle = angle || 0.0;
+	x = x || 0.0;
+	y = y || 0.0;
+	z = z || 0.0;
+	
+	if(angle == 0.0 || (x == 0.0 && y == 0.0 && z == 0.0)){
+		return a;
+	}
+	
+	return Matrix.Rotation(angle * Math.PI / 180, $V([x, y, z])).ensure4x4().x(a);
 }
 
-function scale(a, v) {
+function scale(a, x, y, z) {
 	if(a == null){
 		a = identity();
 	}
 	
-	return a.x($M([
-			[v[0], 0, 0, 0],
-			[0, v[1], 0, 0],
-			[0, 0, v[2], 0],
+	x = x || 0.0;
+	y = y || 0.0;
+	z = z || 0.0;
+	
+	if(x == 0.0 && y == 0.0 && z == 0.0){
+		return a;
+	}
+	
+	return $M([
+			[x, 0, 0, 0],
+			[0, y, 0, 0],
+			[0, 0, z, 0],
 			[0, 0, 0, 1]
-		]).ensure4x4());
+		]).ensure4x4().x(a);
 }
 
 function setUniforms() {
-	gl.uniformMatrix4fv(shaderProgram.uniforms.pvm, false, new Float32Array(projection.x(view).x(model).flatten()));
+	gl.uniformMatrix4fv(shaderProgram.uniforms.projection, false, new Float32Array(projection.flatten()));
+	gl.uniformMatrix4fv(shaderProgram.uniforms.model, false, new Float32Array(model.flatten()));
+	gl.uniformMatrix4fv(shaderProgram.uniforms.view, false, new Float32Array(view.flatten()));
 	
 	var lightBias = $M([
 		[0.5, 0.0, 0.0, 0.5],
@@ -234,7 +261,9 @@ function setUniforms() {
 		[0.0, 0.0, 0.5, 0.5],
 		[0.0, 0.0, 0.0, 1.0]
 	]);
-	gl.uniformMatrix4fv(shaderProgram.uniforms.lightBiasPVM, false, new Float32Array(lightBias.x(lightProjection.x(lightView).x(model)).flatten()));
+	gl.uniformMatrix4fv(shaderProgram.uniforms.lightBias, false, new Float32Array(lightBias.flatten()));
+	gl.uniformMatrix4fv(shaderProgram.uniforms.lightProjection, false, new Float32Array(lightProjection.flatten()));
+	gl.uniformMatrix4fv(shaderProgram.uniforms.lightView, false, new Float32Array(lightView.flatten()));
 	
 	var normalMatrix = model.inv();
 	normalMatrix = normalMatrix.transpose();
@@ -244,7 +273,9 @@ function setUniforms() {
 }
 
 function setLightUniforms(){
-	gl.uniformMatrix4fv(lightShaderProgram.uniforms.pvm, false, new Float32Array(lightProjection.x(lightView).x(model).flatten()));
+	gl.uniformMatrix4fv(lightShaderProgram.uniforms.projection, false, new Float32Array(lightProjection.flatten()));
+	gl.uniformMatrix4fv(lightShaderProgram.uniforms.model, false, new Float32Array(model.flatten()));
+	gl.uniformMatrix4fv(lightShaderProgram.uniforms.view, false, new Float32Array(lightView.flatten()));
 }
 
 function createMesh(vertices, colors, normals, indices, material){
@@ -481,6 +512,7 @@ function initBuffers(){
 	// Objects of the scene
 	world[0] = loadObj("groundObj", rgbFloat(163, 214, 81), materials.ground);
 	world[1] = loadObj("suzanneObj", rgbFloat(247, 209, 59), materials.iron);
+	world[2] = loadObj("sphereObj", rgbFloat(124, 95, 27), materials.ground);
 	
 	// HUD
 	hud[0] = createHUDElement(-1.0, -1.0, 512.0 / canvas.width, 512.0 / canvas.height);
@@ -505,7 +537,9 @@ function initShaders(){
 		lightShaderProgram.attributes.vertexPosition = gl.getAttribLocation(lightShaderProgram, "vertexPos");
 		
 		// Uniforms
-		lightShaderProgram.uniforms.pvm = gl.getUniformLocation(lightShaderProgram, "pvm");
+		lightShaderProgram.uniforms.projection = gl.getUniformLocation(lightShaderProgram, "projection");
+		lightShaderProgram.uniforms.model = gl.getUniformLocation(lightShaderProgram, "model");
+		lightShaderProgram.uniforms.view = gl.getUniformLocation(lightShaderProgram, "view");
 	gl.useProgram(null);
 	
 	shaderProgram = createProgram("shader-vs", "shader-fs");
@@ -517,8 +551,12 @@ function initShaders(){
 		shaderProgram.attributes.vertexNormal = gl.getAttribLocation(shaderProgram, "vertexNormal");
 		
 		// Uniforms
-		shaderProgram.uniforms.lightBiasPVM = gl.getUniformLocation(shaderProgram, "lightBiasPVM");
-		shaderProgram.uniforms.pvm = gl.getUniformLocation(shaderProgram, "pvm");
+		shaderProgram.uniforms.lightBias = gl.getUniformLocation(shaderProgram, "lightBias");
+		shaderProgram.uniforms.lightProjection = gl.getUniformLocation(shaderProgram, "lightProjection");
+		shaderProgram.uniforms.lightView = gl.getUniformLocation(shaderProgram, "lightView");
+		shaderProgram.uniforms.projection = gl.getUniformLocation(shaderProgram, "projection");
+		shaderProgram.uniforms.model = gl.getUniformLocation(shaderProgram, "model");
+		shaderProgram.uniforms.view = gl.getUniformLocation(shaderProgram, "view");
 		shaderProgram.uniforms.normalMatrix = gl.getUniformLocation(shaderProgram, "normalMatrix");
 		shaderProgram.uniforms.lightDirection = gl.getUniformLocation(shaderProgram, "lightDirection");
 		
@@ -673,9 +711,15 @@ function loop(){
 	
 	world[1].transform = identity();
 	
-	world[1].transform = scale(world[1].transform, [0.6, 0.6, 0.6]);
-	world[1].transform = translate(world[1].transform, [0.0, 0.0, 1.0]);
-	world[1].transform = rotate(world[1].transform, angle, [0.0, 0.0, 1.0]);
+	world[1].transform = scale(world[1].transform, 0.6, 0.6, 0.6);
+	world[1].transform = rotate(world[1].transform, angle, 0.0, 0.0, 1.0);
+	
+	world[2].transform = identity();
+	
+	world[2].transform = scale(world[2].transform, 0.5, 0.5, 0.5);
+	world[2].transform = rotate(world[2].transform, angle, 0.0, 0.0, 1.0);
+	world[2].transform = rotate(world[2].transform, angle, 1.0, 0.0, 0.0);
+	world[2].transform = translate(world[2].transform, 2.0, 0.0, 1.0);
 	
 	input();
 	render();
@@ -685,11 +729,8 @@ function loop(){
 }
 
 function render(){
-	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-	
-	lightProjection = makeOrtho(-10.0, 10.0, -10.0, 10.0, -10.0, 20.0);
-	
-	model = identity();
+	// SHADOW MAP RENDER
+	lightProjection = makeOrtho(-10.0, 10.0, -10.0, 10.0, -10.0, 10.0);
 	
 	lightView = makeLookAt(	0.0, 0.0, 0.0,
 							lightDirection.elements[0], lightDirection.elements[1], lightDirection.elements[2],
@@ -697,6 +738,7 @@ function render(){
 	
 	gl.viewport(0, 0, settings.shadowMapSize, settings.shadowMapSize);
 	gl.bindFramebuffer(gl.FRAMEBUFFER, lightFrameBuffer);
+	gl.colorMask(false, false, false, false);
 	gl.clear(gl.DEPTH_BUFFER_BIT);
 	
 	gl.useProgram(lightShaderProgram);
@@ -718,7 +760,11 @@ function render(){
 		gl.disableVertexAttribArray(lightShaderProgram.attributes.vertexPosition);
 	gl.useProgram(null);
 	
+	gl.colorMask(true, true, true, true);
 	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	
+	// CLASSIC RENDER
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	
 	projection = makePerspective(settings.fov, settings.ratio, 0.1, 1000.0);
 	
@@ -726,8 +772,6 @@ function render(){
 						camera.center.elements[0], camera.center.elements[1], camera.center.elements[2],
 						camera.up.elements[0], camera.up.elements[1], camera.up.elements[2]);
 	
-	
-	// CLASSIC RENDER
 	gl.viewport(0, 0, canvas.width, canvas.height);
 	gl.useProgram(shaderProgram);
 		gl.enableVertexAttribArray(shaderProgram.attributes.vertexPosition);
@@ -762,7 +806,7 @@ function render(){
 		gl.disableVertexAttribArray(shaderProgram.attributes.vertexPosition);
 	gl.useProgram(null);
 	
-	// HUD
+	// HUD RENDER
 	gl.disable(gl.DEPTH_TEST);
 	gl.useProgram(HUDShaderProgram);
 		gl.enableVertexAttribArray(HUDShaderProgram.attributes.vertexPosition);
