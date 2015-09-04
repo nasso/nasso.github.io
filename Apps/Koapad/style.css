@@ -1,0 +1,68 @@
+/* FONT */
+@font-face {
+	font-family: "Roboto";
+	src: url("Roboto regular.ttf");
+}
+
+/* STYLE */
+#koapad{
+	font-family: "Roboto";
+	background-color: #2C3E50;
+	border-radius: 4px;
+	display: inline-block;
+	text-align: center;
+}
+
+#koapad table{
+	border-spacing: 8px;
+}
+
+#koapad h1{
+	color: #BDC3C7;
+	font-size: 2em;
+	position: relative;
+	left: -432px;
+	top: -4px;
+	height: 0.8em;
+}
+
+#koapad h1 .titlePrefix{
+	background-color: #27AE60;
+	color: #2C3E50;
+	padding: 0px 6px;
+	border-radius: 8px 0px 0px 8px;
+	border: 2px solid #27AE60;
+}
+
+#koapad h1 .titleSuffix{
+	padding: 0px 6px;
+	border-radius: 0px 8px 8px 0px;
+	border: 2px solid #27AE60;
+}
+
+.key{
+	width: 32px;
+	height: 32px;
+	text-align: left;
+	padding: 32px;
+	background-color: #BDC3C7;
+	color: #7F8C8D;
+	box-shadow: 0px 0px 2px #BDC3C7;
+	border-radius: 2px;
+	
+	transition: background-color 500ms;
+	-o-transition: background-color 500ms;
+	-moz-transition: background-color 500ms;
+	-webkit-transition: background-color 500ms;
+}
+
+.key:hover{
+	background-color: #27AE60;
+}
+
+.keyNumber{
+	text-shadow: 0px 0px 8px #7F8C8D;
+	position: relative;
+	bottom: -36px;
+	left: -26px;
+}
