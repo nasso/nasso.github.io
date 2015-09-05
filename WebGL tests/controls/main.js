@@ -51,9 +51,11 @@ var settings = {
 	waterColor: [0.2, 0.3, 0.6, 0.6]
 };
 
-var currentControls = "wasd";
 var zqsdRadio;
 var wasdRadio;
+var resolRadios = [];
+
+var currentControls = "wasd";
 var controls;
 
 var world = [];
@@ -614,17 +616,50 @@ function initListeners(){
 	wasdRadio = $("#wasdRadio")[0];
 	zqsdRadio = $("#zqsdRadio")[0];
 	
-	wasdRadio.onchange = function(){
-		if(wasdRadio.checked){
-			currentControls = "wasd";
-		}
+	resolRadios["1280x720"] = $("#1280x720")[0];
+	resolRadios["1920x1080"] = $("#1920x1080")[0];
+	resolRadios["1280x800"] = $("#1280x800")[0];
+	resolRadios["1920x1200"] = $("#1920x1200")[0];
+	
+	generateChange = function(callback, radio){
+		radio.onchange = function(){
+			if(radio.checked){
+				callback();
+			}
+		};
 	};
 	
-	zqsdRadio.onchange = function(){
-		if(zqsdRadio.checked){
-			currentControls = "zqsd";
-		}
-	};
+	generateChange(function(){
+		currentControls = "wasd";
+	}, wasdRadio);
+	
+	generateChange(function(){
+		currentControls = "zqsd";
+	}, zqsdRadio);
+	
+	generateChange(function(){
+		settings.resolution.width = 1280;
+		settings.resolution.height = 720;
+		settings.ratio = 16/9;
+	}, resolRadios["1280x720"]);
+	
+	generateChange(function(){
+		settings.resolution.width = 1920;
+		settings.resolution.height = 1080;
+		settings.ratio = 16/9;
+	}, resolRadios["1920x1080"]);
+	
+	generateChange(function(){
+		settings.resolution.width = 1280;
+		settings.resolution.height = 800;
+		settings.ratio = 16/10;
+	}, resolRadios["1280x800"]);
+	
+	generateChange(function(){
+		settings.resolution.width = 1920;
+		settings.resolution.height = 1200;
+		settings.ratio = 16/10;
+	}, resolRadios["1920x1200"]);
 }
 
 // RENDER STUFF
