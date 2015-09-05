@@ -5,12 +5,18 @@
 }
 
 /* STYLE */
+body{
+	background-color: #34495E;
+	text-align: center;
+}
+
 #koapad{
 	font-family: "Roboto";
 	background-color: #2C3E50;
 	border-radius: 4px;
 	display: inline-block;
 	text-align: center;
+	box-shadow: 0px 0px 4px black;
 }
 
 #koapad table{
@@ -27,37 +33,28 @@
 }
 
 #koapad h1 .titlePrefix{
-	background-color: #27AE60;
+	background-color: #2ecc71;
 	color: #2C3E50;
 	padding: 0px 6px;
 	border-radius: 8px 0px 0px 8px;
-	border: 2px solid #27AE60;
+	border: 2px solid #2ecc71;
 }
 
 #koapad h1 .titleSuffix{
 	padding: 0px 6px;
 	border-radius: 0px 8px 8px 0px;
-	border: 2px solid #27AE60;
+	border: 2px solid #2ecc71;
 }
 
 .key{
+	z-index: 99;
+	
 	width: 32px;
 	height: 32px;
 	text-align: left;
 	padding: 32px;
-	background-color: #BDC3C7;
 	color: #7F8C8D;
-	box-shadow: 0px 0px 2px #BDC3C7;
 	border-radius: 2px;
-	
-	transition: background-color 500ms;
-	-o-transition: background-color 500ms;
-	-moz-transition: background-color 500ms;
-	-webkit-transition: background-color 500ms;
-}
-
-.key:hover{
-	background-color: #27AE60;
 }
 
 .keyNumber{
