@@ -1,0 +1,184 @@
+/* FONTS */
+
+/*
+Folowing is not used
+
+@font-face {
+	font-family: "Roboto";
+	src: url("Roboto.ttf");
+}
+
+@font-face {
+	font-family: "Roboto light";
+	src: url("Roboto-Light.ttf");
+}
+*/
+
+@font-face {
+	font-family: "Roboto medium";
+	src: url("Roboto-Medium.ttf");
+}
+
+@font-face {
+	font-family: "Roboto regular";
+	src: url("Roboto-Regular.ttf");
+}
+
+/* STYLE */
+* {
+	font-family: "Roboto regular";
+}
+
+h1, h2, h3, h4, h5, h6 {
+	font-family: "Roboto medium";
+}
+
+img {
+	box-shadow: 0px 0px 1px black;
+}
+
+header {
+	padding: 2px;
+	margin: 0px;
+	background-color: #2C3E50;
+	box-shadow: 0px 0px 1px black;
+	border-bottom: 4px solid #34495E;
+}
+
+html, body {
+	height: 100%;
+	margin: 0px;
+	padding: 0px;
+	background-color: #2C3E50;
+	color: #ECF0F1;
+}
+
+#container {
+	position: relative;
+	min-height: 100%;
+	padding-bottom: 86px;
+}
+
+.centered {
+	text-align: center;
+	margin: auto;
+}
+
+*:-webkit-full-screen{
+	width: 100%;
+	height: 100%;
+}
+
+hr {
+	border: 1px solid #34495E;
+}
+
+canvas{
+	display: inline-block;
+	box-shadow: 0px 0px 4px black;
+	float: left;
+	margin-right: 16px;
+	background: black;
+}
+
+a {
+	transition: background-color 500ms;
+	-o-transition: background-color 500ms;
+	-moz-transition: background-color 500ms;
+	-webkit-transition: background-color 500ms;
+	
+	background-color: #3498DB;
+	box-shadow: 0px 0px 1px black;
+	display: inline-block;
+	text-align: center;
+	border-radius: 2px;
+	margin: 4px;
+	padding: 8px 16px;
+	height: 24px;
+	line-height: 24px;
+	color: #ECF0F1;
+	text-decoration: none;
+}
+
+a:hover, input[type=radio]:checked + label,  input[type=radio]:hover + label{
+	background-color: #27AE60;
+}
+
+.redLink:hover {
+	background-color: #E74C3C;
+}
+
+.wipLabel {
+	color: #F1C40F;
+}
+
+article {
+	padding: 2px 8px;
+	padding-bottom: 16px;
+	margin: 0px;
+	
+	border-bottom: 1px solid #34495E;
+	
+	overflow: hidden;
+}
+
+article .descAndLinks{
+	vertical-align: top;
+	display: inline-block;
+	text-align: left;
+}
+
+article aside {
+	margin-right: 16px;
+	padding: 16px;
+	border-right: 1px solid #34495E;
+	display: inline-block;
+}
+
+article aside img {
+	height: 256px;
+	width: auto;
+}
+
+ul {
+	padding: 0px;
+	list-style: none;
+	text-align: center;
+	display: inline-block;
+}
+
+ul li a {
+	width: 100%;
+}
+
+input[type=radio] {
+	display: none;
+}
+
+input[type=radio] + label{
+	transition: background-color 500ms;
+	-o-transition: background-color 500ms;
+	-moz-transition: background-color 500ms;
+	-webkit-transition: background-color 500ms;
+	
+	background-color: #3498DB;
+	box-shadow: 0px 0px 1px black;
+	display: inline-block;
+	text-align: center;
+	border-radius: 2px;
+	margin: 4px;
+	padding: 8px 16px;
+	height: 24px;
+	line-height: 24px;
+}
+
+footer{
+	position: absolute;
+	width: 100%;
+	bottom: 0px;
+	line-height: 86px;
+	height: 86px;
+	margin: 0px;
+	background-color: #2C3E50;
+	border-top: 1px solid #34495E;
+}

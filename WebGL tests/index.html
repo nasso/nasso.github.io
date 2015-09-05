@@ -3,61 +3,131 @@
 <html>
 	<head>
 		<title>WebGL tests</title>
+		<link rel="stylesheet" href="../css/style.css" type="text/css">
 		<meta charset="utf-8">
 	</head>
-	<body onload="start();">
-		<h1>Here are my WebGL tests !</h1>
-		
-		<h2>Cube</h2>
-		<p>
-			A sample cube, with lighting and texture (sometimes long to load).<br />
-			Use arrows keys to rotate the cube, and Z/S to move forward/backward.
-		</p>
-		<ul>
-			<li><a href="cube/index.html">Cube: Move with arrows keys !</a></li>
-			<li><a href="cube/automatic.html">Cube: Mobile version (auto rotate) !</a></li>
-		</ul>
-		
-		<h2>FPS Controls</h2>
-		<p>
-			A sample world where you can move with ZQSD/WASD and use mouse to look, like in a lot of games.
-		</p>
-		<ul>
-			<li><a href="fps/index.html">FPS: Move with ZQSD and use mouse to see !</a></li>
-			<li><a href="fps/qwerty.html">FPS: Move with WASD and use mouse to see !</a></li>
-		</ul>
-		
-		<h2>OBJ Loading</h2>
-		<p>
-			Loading a Wavefront OBJ model (suzanne) and make it rotate.
-		</p>
-		<ul>
-			<li><a href="objLoading/index.html">OBJ: ZQSD version</a></li>
-			<li><a href="objLoading/qwerty.html">OBJ: WASD version</a></li>
-		</ul>
-		
-		<h2>Shadow mapping + HUD</h2>
-		<p>
-			A shadow mapping demo. The depth buffer is in the bottom left (HUD).<br />
-			Max quality version has better quality shadows and a 1920x1080 resolution.
-		</p>
-		<ul>
-			<li><a href="shadowMapping/index.html">Shadow mapping: ZQSD version</a></li>
-			<li><a href="shadowMapping/plus.html">Shadow mapping: ZQSD version (max quality, decrease FPS)</a></li>
-			<li><a href="shadowMapping/qwerty.html">Shadow mapping: WASD version</a></li>
-			<li><a href="shadowMapping/qwerty plus.html">Shadow mapping: WASD version (max quality, decrease FPS)</a></li>
-			<li><a href="shadowMapping/mobile.html">Shadow mapping: mobile version (no controls)</a></li>
-		</ul>
-		
-		<h2>Water (WIP)</h2>
-		<p>
-			Water implementation: the world is now infinite (well, not really) !<br />
-			The water is translucent.<br />
-			To do: reflections 
-		</p>
-		<ul>
-			<li><a href="water/index.html">Water: ZQSD version</a></li>
-			<li><a href="water/qwerty.html">Water: WASD version</a></li>
-		</ul>
+	<body>
+		<div id="container" class="centered">
+			<header>
+				<h1>WebGL tests</h1>
+			</header>
+			
+			<article>
+				<h2>Cube</h2>
+				
+				<aside>
+					<img src="cube/preview.png" alt="Preview"></img>
+				</aside>
+				
+				<div class="descAndLinks">
+					<p>
+						A simple cube, with lighting and texture (sometimes long to load).<br />
+						Use arrows keys to rotate the cube, and Z/S to move forward/backward.
+					</p>
+					<ul>
+						<li><a href="cube/index.html">Cube: Move with arrows keys !</a></li>
+						<li><a href="cube/automatic.html">Cube: Mobile version (auto rotate) !</a></li>
+					</ul>
+				</div>
+			</article>
+			
+			<article>
+				<h2>FPS Controls</h2>
+				
+				<aside>
+					<img src="fps/preview.png" alt="Preview"></img>
+				</aside>
+				
+				<div class="descAndLinks">
+					<p>
+						A simple world where you can move with ZQSD/WASD and use mouse to look, like in a lot of games.
+					</p>
+					<ul>
+						<li><a href="fps/index.html">FPS: Move with ZQSD and use mouse to see !</a></li>
+						<li><a href="fps/qwerty.html">FPS: Move with WASD and use mouse to see !</a></li>
+					</ul>
+				</div>
+			</article>
+			
+			<article>
+				<h2>OBJ Loading</h2>
+				
+				<aside>
+					<img src="objLoading/preview.png" alt="Preview"></img>
+				</aside>
+				
+				<div class="descAndLinks">
+					<p>
+						Loading of a Wavefront OBJ model (suzanne) and making it rotate.
+					</p>
+					<ul>
+						<li><a href="objLoading/index.html">OBJ: ZQSD version</a></li>
+						<li><a href="objLoading/qwerty.html">OBJ: WASD version</a></li>
+					</ul>
+				</div>
+			</article>
+			
+			<article>
+				<h2>Shadow mapping + HUD</h2>
+				
+				<aside>
+					<img src="shadowMapping/preview.png" alt="Preview"></img>
+				</aside>
+				
+				<div class="descAndLinks">
+					<p>
+						A shadow mapping demo. The depth buffer is in the bottom left (HUD).<br />
+						Max quality version has better quality shadows and a 1920x1080 resolution.
+					</p>
+					<ul>
+						<li><a href="shadowMapping/index.html">Shadow mapping: ZQSD version</a></li>
+						<li><a href="shadowMapping/plus.html">Shadow mapping: ZQSD version (max quality, decrease FPS)</a></li>
+						<li><a href="shadowMapping/qwerty.html">Shadow mapping: WASD version</a></li>
+						<li><a href="shadowMapping/qwerty plus.html">Shadow mapping: WASD version (max quality, decrease FPS)</a></li>
+						<li><a href="shadowMapping/mobile.html">Shadow mapping: mobile version (no controls)</a></li>
+					</ul>
+				</div>
+			</article>
+			
+			<article>
+				<h2>Water <span class="wipLabel" title="Work In Progress">(WIP)</span></h2>
+				
+				<aside>
+					<img src="water/preview.png" alt="Preview"></img>
+				</aside>
+				
+				<div class="descAndLinks">
+					<p>
+						Water implementation: the world is now infinite (well, not really) !<br />
+						The water is translucent.<br />
+						To do: reflections
+					</p>
+					<ul>
+						<li><a href="water/index.html">Water: ZQSD &amp; WASD version</a></li>
+					</ul>
+				</div>
+			</article>
+			
+			<article>
+				<h2>Controls <span class="wipLabel" title="Work In Progress">(WIP)</span></h2>
+				
+				<aside>
+					<img src="controls/preview.png" alt="Preview"></img>
+				</aside>
+				
+				<div class="descAndLinks">
+					<p>
+						WASD and ZQSD controls !
+					</p>
+					<ul>
+						<li><a href="controls/index.html">Controls: WASD and ZQSD versions !</a></li>
+					</ul>
+				</div>
+			</article>
+			
+			<footer>
+				<a href="../index.html" class="redLink">Back to home</a>
+			</footer>
+		</div>
 	</body>
 </html>

@@ -4,7 +4,7 @@
 	<head>
 		<title>WebGL water (WIP)</title>
 		<meta charset="utf-8">
-		<link rel="stylesheet" href="../css/style.css" type="text/css">
+		<link rel="stylesheet" href="../../css/style.css" type="text/css">
 		<script type="text/javascript" src="../lib/jquery.js"></script>
 		<script type="text/javascript" src="../lib/sylvester.js"></script>
 		<script type="text/javascript" src="../lib/glUtils.js"></script>
@@ -29,18 +29,24 @@
 		<script id="water-shader-vs" type="x-shader/x-vertex">
 			attribute vec2 vertexPos;
 			
-			uniform float waterLevel;
 			uniform mat4 pvm;
+			uniform vec4 waterColor;
+			
+			varying lowp vec4 vWaterColor;
 			
 			void main(){
-				gl_Position = pvm * vec4(vertexPos, waterLevel, 1.0);
+				gl_Position = pvm * vec4(vertexPos, 0.0, 1.0);
+				
+				vWaterColor = waterColor;
 			}
 		</script>
 		
 		<!-- FRAGMENT SHADER ! LMAO -->
 		<script id="water-shader-fs" type="x-shader/x-fragment">
+			varying lowp vec4 vWaterColor;
+			
 			void main(){
-				gl_FragColor = vec4(0.2, 0.3, 0.6, 0.5);
+				gl_FragColor = vWaterColor;
 			}
 		</script>
 		
@@ -99,16 +105,20 @@
 			uniform mat4 lightBiasPVM;
 			uniform vec3 lightDirection;
 			
+			uniform vec4 overrideColor;
+			
 			varying lowp vec4 vColor;
+			varying lowp vec4 vOverrideColor;
 			varying highp vec3 vLighting;
 			varying highp vec3 vAmbientLight;
 			varying highp float vCosTheta;
-
+			
 			varying highp vec4 vShadowCoord;
 			
 			void main(){
 				gl_Position = pvm * vec4(vertexPos, 1.0);
 				vColor = vertexColor;
+				vOverrideColor = overrideColor;
 				
 				// Apply lighting effect
 
@@ -129,6 +139,7 @@
 		<!-- FRAGMENT SHADER ! LMAO -->
 		<script id="shader-fs" type="x-shader/x-fragment">
 			varying lowp vec4 vColor;
+			varying lowp vec4 vOverrideColor;
 			varying highp vec3 vLighting;
 			varying highp vec3 vAmbientLight;
 			varying highp float vCosTheta;
@@ -153,9 +164,9 @@
 				
 				highp float visibility = 1.0;
 				
-				for(int i = 0; i < 4; i++){
+				for(int i = 0; i < 8; i++){
 					if(texture2D(lightDepthTexture, vShadowCoord.xy + poissonDisk[i]/2400.0).x < vShadowCoord.z-bias){
-						visibility -= 0.2;
+						visibility -= 0.1;
 					}
 				}
 				
@@ -163,7 +174,7 @@
 					visibility = 1.0;
 				}
 				
-				gl_FragColor = vec4(vColor.rgb * (vAmbientLight + (vLighting * visibility)), vColor.a);
+				gl_FragColor = mix(vec4(vColor.rgb * (vAmbientLight + (vLighting * visibility)), vColor.a), vec4(vOverrideColor.rgb, 1.0), vOverrideColor.a);
 			}
 		</script>
 		
@@ -10152,5 +10163,9 @@
 		<canvas id="canvas" width="1280" height="720">
 			Your browser doesn't support &lt;canvas&gt; HTML5 feature.
 		</canvas>
+		
+		<br />
+		
+		<a href="../index.html" class="redLink">Back</a>
 	</body>
 </html>

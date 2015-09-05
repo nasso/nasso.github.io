@@ -51,6 +51,9 @@ var settings = {
 	waterColor: [0.2, 0.3, 0.6, 0.6]
 };
 
+var currentControls = "wasd";
+var zqsdRadio;
+var wasdRadio;
 var controls;
 
 var world = [];
@@ -607,6 +610,21 @@ function initListeners(){
 			relMouseCoords.y = e.movementY || e.mozMovementY ||e.webkitMovementY || (mouseCoords.y - lastMouseCoords.y);
 		}
 	});
+	
+	wasdRadio = $("#wasdRadio")[0];
+	zqsdRadio = $("#zqsdRadio")[0];
+	
+	wasdRadio.onchange = function(){
+		if(wasdRadio.checked){
+			currentControls = "wasd";
+		}
+	};
+	
+	zqsdRadio.onchange = function(){
+		if(zqsdRadio.checked){
+			currentControls = "zqsd";
+		}
+	};
 }
 
 // RENDER STUFF
@@ -630,7 +648,7 @@ function directKeyUp(keycode){
 		fullscreen = false;
 	}
 	
-	if(keycode == controls.toggleHUD){
+	if(keycode == controls[currentControls].toggleHUD){
 		showHUD = !showHUD;
 	}
 }
@@ -642,8 +660,8 @@ function calcDelta(){
 }
 
 function input(){
-	phi += -relMouseCoords.y * controls.mouseSensitivity;
-	theta += -relMouseCoords.x * controls.mouseSensitivity;
+	phi += -relMouseCoords.y * controls[currentControls].mouseSensitivity;
+	theta += -relMouseCoords.x * controls[currentControls].mouseSensitivity;
 	
 	relMouseCoords.x = 0;
 	relMouseCoords.y = 0;
@@ -665,25 +683,25 @@ function input(){
 	camera.orientation2d = $V([camera.orientation.elements[0], camera.orientation.elements[1], 0.0]);
 	var lateral = camera.up.cross(camera.orientation2d).toUnitVector();
 	
-	if(keyState[controls.run]){
+	if(keyState[controls[currentControls].run]){
 		speed = 2.0;
 	}else{
 		speed = 1.0;
 	}
 	
-	if(keyState[controls.forward]){
+	if(keyState[controls[currentControls].forward]){
 		camera.eye = camera.eye.add(camera.orientation2d.x((speed * 5.0) * delta));
 	}
 	
-	if(keyState[controls.backward]){
+	if(keyState[controls[currentControls].backward]){
 		camera.eye = camera.eye.subtract(camera.orientation2d.x((speed * 5.0) * delta));
 	}
 	
-	if(keyState[controls.strafeLeft]){
+	if(keyState[controls[currentControls].strafeLeft]){
 		camera.eye = camera.eye.add(lateral.x((speed * 5.0) * delta));
 	}
 	
-	if(keyState[controls.strafeRight]){
+	if(keyState[controls[currentControls].strafeRight]){
 		camera.eye = camera.eye.subtract(lateral.x((speed * 5.0) * delta));
 	}
 	

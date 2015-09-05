@@ -2,7 +2,7 @@
 
 <html>
 	<head>
-		<title>WebGL water (WIP)</title>
+		<title>Settings and Controls</title>
 		<meta charset="utf-8">
 		<link rel="stylesheet" href="../../css/style.css" type="text/css">
 		<script type="text/javascript" src="../lib/jquery.js"></script>
@@ -13,15 +13,28 @@
 		
 		<script type="application/json" id="controls">
 			{
-				"forward":87,
-				"backward":83,
-				"strafeLeft":65,
-				"strafeRight":68,
-				"run":17,
-				"toggleHUD": 72,
-				
-				"fullscreen":122,
-				"mouseSensitivity":0.2
+				"wasd":{
+					"forward":87,
+					"backward":83,
+					"strafeLeft":65,
+					"strafeRight":68,
+					"run":17,
+					"toggleHUD": 72,
+					
+					"fullscreen":122,
+					"mouseSensitivity":0.2
+				},
+				"zqsd":{
+					"forward":90,
+					"backward":83,
+					"strafeLeft":81,
+					"strafeRight":68,
+					"run":17,
+					"toggleHUD": 72,
+					
+					"fullscreen":122,
+					"mouseSensitivity":0.2
+				}
 			}
 		</script>
 		
@@ -10164,7 +10177,13 @@
 			Your browser doesn't support &lt;canvas&gt; HTML5 feature.
 		</canvas>
 		
-		<br />
+		<h2>Controls:</h2>
+		<input type=radio name="controls" id="wasdRadio" checked>
+			<label for="wasdRadio">WASD</label>
+		<input type=radio name="controls" id="zqsdRadio">
+			<label for="zqsdRadio">ZQSD</label>
+		
+		<hr />
 		
 		<a href="../index.html" class="redLink">Back</a>
 	</body>

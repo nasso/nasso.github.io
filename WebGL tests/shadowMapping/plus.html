@@ -4,7 +4,7 @@
 	<head>
 		<title>WebGL shadow mapping</title>
 		<meta charset="utf-8">
-		<link rel="stylesheet" href="../css/style.css" type="text/css">
+		<link rel="stylesheet" href="../../css/style.css" type="text/css">
 		<script type="text/javascript" src="../lib/jquery.js"></script>
 		<script type="text/javascript" src="../lib/sylvester.js"></script>
 		<script type="text/javascript" src="../lib/glUtils.js"></script>
@@ -145,9 +145,9 @@
 				
 				highp float visibility = 1.0;
 				
-				for(int i = 0; i < 4; i++){
-					if(texture2D(lightDepthTexture, vShadowCoord.xy + poissonDisk[i]/2400.0).x < vShadowCoord.z-bias){
-						visibility -= 0.2;
+				for(int i = 0; i < 8; i++){
+					if(texture2D(lightDepthTexture, vShadowCoord.xy + poissonDisk[i]/2800.0).x < vShadowCoord.z-bias){
+						visibility -= 0.1;
 					}
 				}
 				

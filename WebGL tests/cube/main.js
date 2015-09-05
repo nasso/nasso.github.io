@@ -491,17 +491,8 @@ function optimizeAngles(){
 	}
 }
 
-function render(){
-	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-	
-	projection = makePerspective(70, aspectRatio, 0.1, 100.0);
-	
-	modelView = identity();
-	modelView = translate(modelView, [0.0, 0.0, zoom]);
-	modelView = rotate(modelView, angleX, [1.0, 0.0, 0.0])
-	modelView = rotate(modelView, angleY, [0.0, 1.0, 0.0])
-	modelView = rotate(modelView, angleZ, [0.0, 0.0, 1.0])
-	
+function drawWorld(){
+	// Draw world
 	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesBuffer);
 	gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
 	
@@ -525,4 +516,33 @@ function render(){
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeIndexBuffer);
 	setMatrixUniforms();
 	gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0);
+}
+
+function render(){
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	
+	projection = makePerspective(70, aspectRatio, 0.1, 100.0);
+	
+	modelView = identity();
+	modelView = translate(modelView, [0.0, 0.0, -6.0]);
+	
+	gl.enable(gl.STENCIL_TEST);
+		gl.stencilFunc(gl.ALWAYS, 1, 0xFF);
+		gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
+		gl.stencilMask(0xFF);
+		gl.clear(gl.STENCIL_BUFFER_BIT);
+		
+		drawWorld();
+		
+		modelView = identity();
+		modelView = translate(modelView, [0.0, 0.0, zoom]);
+		modelView = rotate(modelView, angleX, [1.0, 0.0, 0.0])
+		modelView = rotate(modelView, angleY, [0.0, 1.0, 0.0])
+		modelView = rotate(modelView, angleZ, [0.0, 0.0, 1.0])
+		
+		gl.stencilFunc(gl.EQUAL, 1, 0xFF);
+		gl.stencilMask(0x00);
+		
+		drawWorld();
+	gl.disable(gl.STENCIL_TEST);
 }
