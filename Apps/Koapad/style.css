@@ -5,6 +5,10 @@
 }
 
 /* STYLE */
+*{
+	font-family: "Roboto";
+}
+
 body{
 	background-color: #34495E;
 	color: #ecf0f1;
