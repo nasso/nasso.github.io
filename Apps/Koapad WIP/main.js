@@ -10,7 +10,10 @@ var barsCount = 128;
 var selectedPadKey = null;
 
 var audioContext;
+
 var analyser;
+var masterGain;
+
 var freqs;
 var bars = [];
 var maximum = 0;
@@ -37,15 +40,14 @@ window.requestAnimationFrame = function(){
 
 // FUNCTIONS
 function playSound(soundBuffer, time){
-	var gainNode = audioContext.createGain();
-	var normVolume = settings.volume.getNormalizedValue();
-	gainNode.gain.value = normVolume * normVolume;
-	
 	var bufferSource = audioContext.createBufferSource();
 	bufferSource.buffer = soundBuffer;
 	
-	bufferSource.connect(gainNode);
-	gainNode.connect(analyser);
+	bufferSource.connect(masterGain);
+	
+	bufferSource.addEventListener("ended", function(){
+		this.disconnect(masterGain);
+	});
 	
 	bufferSource.start(time);
 }
@@ -197,8 +199,6 @@ function keyDown(event){
 	g = Math.floor(g);
 	b = Math.floor(b);
 	
-	
-	
 	currentPadKey.unselect(); // Unselected the padkey if it is selected
 	currentPadKey.setColor(r, g, b); // Set a random color
 	
@@ -235,7 +235,14 @@ function initAudioContext(){
 	
 	analyser = audioContext.createAnalyser();
 	analyser.fftSize = barsCount;
-	analyser.connect(audioContext.destination);
+	
+	masterGain = audioContext.createGain();
+	var volumeEl = $("#volume")[0];
+	var normVolume = parseInt(volumeEl.getAttribute("data-initial")) / parseInt(volumeEl.getAttribute("data-max"));
+	masterGain.gain.value = normVolume * normVolume;
+	
+	masterGain.connect(analyser);
+	masterGain.connect(audioContext.destination);
 }
 
 function initUI(){
@@ -354,6 +361,11 @@ function initUI(){
 	settings["lightPower"].onvaluechanged = function(){
 		refreshPad();
 	};
+	
+	settings["volume"].onvaluechanged = function(){
+		var normVolume = settings.volume.getNormalizedValue();
+		masterGain.gain.value = normVolume * normVolume;
+	}
 	
 	// Visualizer
 	var barsUl = document.createElement("ul");
