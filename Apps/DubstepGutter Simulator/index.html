@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<title>DubstepGutter Simulator</title>
+		<meta charset="utf-8">
+		<link rel="stylesheet" href="style.css" />
+		<script type="text/javascript" src="jquery.js"></script>
+		<script type="text/javascript" src="main.js"></script>
+		<img src="dsg.png" alt="DSG" id="dsg" class="dataImg">
+	</head>
+	<body onload="start();">
+		<div id="container">
+			<canvas id="canvas" width="1024" height="512"></canvas><br />
+			<nav id="settings">
+				<img src="volume.png" alt="Volume" class="controlIcon"><input type="range" min="0" max="100" value="80" id="volume">
+			</nav>
+		</div>
+		
+		<footer>
+			<h2>How to use ?</h2>
+			<p>Drag &amp; drop an MP3 on the DSG disk, then enjoy !</p>
+		</footer>
+	</body>
+</html>
