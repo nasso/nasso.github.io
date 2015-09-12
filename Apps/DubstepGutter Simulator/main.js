@@ -24,13 +24,19 @@ var rightData;
 var lowData;
 
 // Song
+var songBuffer;
 var songSource;
+var position = 0;
+var playing = false;
+
+var playTime = 0;
 
 // Images
 var dsg;
 var picture;
 
 // Settings
+var playPause;
 var volumeInput;
 var imageShaking = 8;
 var bassMovementPower = 0.8;
@@ -124,9 +130,11 @@ function initCanvas(){
 }
 
 function visualize(){
-	leftAnalyser.getByteFrequencyData(leftData);
-	rightAnalyser.getByteFrequencyData(rightData);
-	lowAnalyser.getByteFrequencyData(lowData);
+	if(playing){
+		leftAnalyser.getByteFrequencyData(leftData);
+		rightAnalyser.getByteFrequencyData(rightData);
+		lowAnalyser.getByteFrequencyData(lowData);
+	}
 	
 	var lowHigher = 0;
 	
@@ -147,8 +155,13 @@ function visualize(){
 	gtx.clearRect(0, 0, canvas.width, canvas.height);
 	
 	if(picture){
-		var xShake = (Math.random()-0.5) * (normHigher * imageShaking);
-		var yShake = (Math.random()-0.5) * (normHigher * imageShaking);
+		var xShake = 0;
+		var yShake = 0;
+		
+		if(playing){
+			xShake = (Math.random()-0.5) * (normHigher * imageShaking);
+			yShake = (Math.random()-0.5) * (normHigher * imageShaking);
+		}
 		
 		var width = picture.width;
 		var height = picture.height;
@@ -207,28 +220,46 @@ function visualize(){
 	window.requestAnimationFrame(visualize);
 }
 
-function stopSong(bufferSource){
-	bufferSource.disconnect(lowFilter);
-	bufferSource.disconnect(splitter);
-	bufferSource.disconnect(context.destination);
-	bufferSource.stop();
+function initSong(buffer){
+	if(songSource){
+		songSource.stop();
+	}
+	
+	songBuffer = buffer;
+	position = 0;
 }
 
-function startSong(buffer){
-	if(songSource){
-		stopSong(songSource);
+function play(){
+	if(playing){
+		songSource.stop();
 	}
 	
 	songSource = context.createBufferSource();
-	songSource.buffer = buffer;
+	songSource.buffer = songBuffer;
 	songSource.connect(lowFilter);
 	songSource.connect(splitter);
 	songSource.connect(masterGain);
-	songSource.start(0);
+	songSource.start(0, position);
+	
+	playing = true;
+	playTime = new Date().getTime();
 	
 	songSource.addEventListener("ended", function(){
-		stopSong(this);
+		this.disconnect(lowFilter);
+		this.disconnect(splitter);
+		this.disconnect(context.destination);
+		
+		playing = false;
 	});
+}
+
+function pause(){
+	if(!playing){
+		return;
+	}
+	
+	position += (new Date().getTime() - playTime)/1000;
+	songSource.stop();
 }
 
 function initInput(){
@@ -258,7 +289,7 @@ function initInput(){
 			
 			reader.addEventListener("load", function(e){
 				context.decodeAudioData(e.target.result, function(buffer){
-					startSong(buffer);
+					initSong(buffer);
 				});
 			});
 			
@@ -268,15 +299,35 @@ function initInput(){
 	
 	volumeInput = $("#volume")[0];
 	
-	volumeInput.addEventListener("change", function(){
-		masterGain.gain.value = (this.value + this.min) / (this.max + this.min);
-	});
-	
 	volumeInput.addEventListener("input", function(){
 		masterGain.gain.value = (this.value + this.min) / (this.max + this.min);
 	});
 	
 	masterGain.gain.value = (volumeInput.value + volumeInput.min) / (volumeInput.max + volumeInput.min);
+	
+	playPause = $("#playPause")[0];
+	
+	playPause.addEventListener("mousedown", function(e){
+		if(e.button == 0){
+			this.setPlaying(!this.isPlaying);
+		}
+	});
+	
+	playPause.setPlaying = function(state){
+		if(!state){
+			this.src = "play.png";
+			
+			pause();
+		}else{
+			this.src = "pause.png";
+			
+			play();
+		}
+		
+		this.isPlaying = state;
+	};
+		
+	playPause.setPlaying(false);
 }
 
 function start(){
