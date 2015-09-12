@@ -7,9 +7,12 @@
 		<link rel="stylesheet" href="style.css" />
 		<script type="text/javascript" src="jquery.js"></script>
 		<script type="text/javascript" src="main.js"></script>
-		<img src="dsg.png" alt="DSG" id="dsg" class="dataImg">
 	</head>
 	<body onload="start();">
+		<div style="display:none;">
+			<img src="dsg.png" alt="DSG" id="dsg">
+		</div>
+		
 		<div id="container">
 			<canvas id="canvas" width="1024" height="512"></canvas><br />
 			<nav id="settings">
@@ -19,7 +22,9 @@
 		
 		<footer>
 			<h2>How to use ?</h2>
-			<p>Drag &amp; drop an MP3 on the DSG disk, then enjoy !</p>
+			<p>
+				Drag &amp; drop an MP3 on the DSG disk to set the song, and an image to set the background !
+			</p>
 		</footer>
 	</body>
 </html>
