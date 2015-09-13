@@ -46,6 +46,7 @@ var endErrorBias = 0.1;
 // ProgressBar
 var pBar;
 var pGtx;
+var currentTimeSpan;
 
 // Compatibility cross-browser
 window.requestAnimationFrame = function(){
@@ -287,10 +288,11 @@ function pause(){
 function refreshBarPosition(){
 	pGtx.clearRect(0, 0, pBar.width, pBar.height);
 	
-	var pixelPos = 0;
+	var totalDuration = 0;
 	if(songBuffer){
-		pixelPos = position / songBuffer.duration * (pBar.width - 8); // 8px margin
+		totalDuration = songBuffer.duration;
 	}
+	var pixelPos = position / totalDuration * (pBar.width - 8); // 8px margin;
 	
 	pixelPos = Math.min(pixelPos+4, pBar.width-4);
 	
@@ -305,6 +307,32 @@ function refreshBarPosition(){
 		
 		pGtx.stroke();
 	pGtx.closePath();
+	
+	// Update the current time span
+	var minutes = Math.floor(position / 60);
+	var seconds = Math.floor(position % 60);
+	var totalMinutes = Math.floor(totalDuration / 60);
+	var totalSeconds = Math.floor(totalDuration % 60);
+	
+	var minStr = minutes.toString();
+	var secStr = seconds.toString();
+	var tMinStr = totalMinutes.toString();
+	var tSecStr = totalSeconds.toString();
+	
+	if(minStr.length < 2){
+		minStr = "0"+minStr;
+	}
+	if(secStr.length < 2){
+		secStr = "0"+secStr;
+	}
+	if(tMinStr.length < 2){
+		tMinStr = "0"+tMinStr;
+	}
+	if(tSecStr.length < 2){
+		tSecStr = "0"+tSecStr;
+	}
+	
+	currentTimeSpan.innerHTML = minStr+":"+secStr+"/"+tMinStr+":"+tSecStr;
 }
 
 function setPosition(sec){
@@ -409,6 +437,7 @@ function initInput(){
 	});
 	
 	pGtx = pBar.getContext("2d");
+	currentTimeSpan = $("#currentTime")[0];
 }
 
 function start(){
