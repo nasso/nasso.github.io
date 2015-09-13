@@ -37,11 +37,12 @@ header{
 }
 
 #canvas{
+	width: 1024;
+	height: 512;
 	border: 1px solid #2c3e50;
 	background-color: #2c3e50;
 	box-shadow: 0px 0px 4px black inset;
 	display: inline-block;
-	margin-bottom: 8px;
 }
 
 input[type=range]{
@@ -49,13 +50,18 @@ input[type=range]{
 	padding: 0px 8px;
 	height: 32px;
 	border-radius: 2px;
-	box-shadow: 0px 0px 2px #ecf0f1;
+	box-shadow: 0px 0px 1px black inset;
+	border-bottom: 1px solid #34495E;
 }
 
 #settings{
-	width: 1024px;
+	width: 1016px;
 	margin: auto;
 	text-align: left;
+	background-color: #2c3e50;
+	padding: 8px 4px;
+	padding-top: 8px;
+	border-radius: 2px;
 }
 
 #playPause{
@@ -97,4 +103,11 @@ a:hover{
 a.small{
 	font-size: 0.6em;
 	padding: 4px 8px;
+}
+
+#progressBar{
+	border-bottom: 1px solid #34495E;
+	margin-bottom: 2px;
+	box-shadow: 0px 0px 1px black inset;
+	border-radius: 2px;
 }

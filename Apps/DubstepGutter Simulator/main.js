@@ -30,6 +30,7 @@ var position = 0;
 var playing = false;
 
 var playTime = 0;
+var lastTime = 0;
 
 // Images
 var dsg;
@@ -40,6 +41,11 @@ var playPause;
 var volumeInput;
 var imageShaking = 8;
 var bassMovementPower = 0.8;
+var endErrorBias = 0.1;
+
+// ProgressBar
+var pBar;
+var pGtx;
 
 // Compatibility cross-browser
 window.requestAnimationFrame = function(){
@@ -131,10 +137,14 @@ function initCanvas(){
 
 function visualize(){
 	if(playing){
-		leftAnalyser.getByteFrequencyData(leftData);
-		rightAnalyser.getByteFrequencyData(rightData);
-		lowAnalyser.getByteFrequencyData(lowData);
+		position += (Date.now() - lastTime)/1000;
+		lastTime = Date.now();
 	}
+	refreshBarPosition();
+	
+	leftAnalyser.getByteFrequencyData(leftData);
+	rightAnalyser.getByteFrequencyData(rightData);
+	lowAnalyser.getByteFrequencyData(lowData);
 	
 	var lowHigher = 0;
 	
@@ -215,7 +225,7 @@ function visualize(){
 	gtx.closePath();
 	
 	gtx.drawImage(dsg, canvas.width/2 - radius, canvas.height/2 - radius, radius*2, radius*2);
-	
+		
 	// CALL IT NEXT FRAME
 	window.requestAnimationFrame(visualize);
 }
@@ -227,6 +237,25 @@ function initSong(buffer){
 	
 	songBuffer = buffer;
 	position = 0;
+	refreshBarPosition();
+	playPause.setPlaying(false);
+}
+
+function onSongSourceEnded(){
+	songSource.disconnect(lowFilter);
+	songSource.disconnect(splitter);
+	songSource.disconnect(context.destination);
+	
+	playing = false;
+	
+	var stoppedPos = position + (Date.now() - lastTime)/1000;
+	stoppedPos += endErrorBias; // Error bias
+	
+	if(stoppedPos >= songBuffer.duration){
+		position = 0;
+		playPause.setPlaying(false);
+		refreshBarPosition();
+	}
 }
 
 function play(){
@@ -241,16 +270,10 @@ function play(){
 	songSource.connect(masterGain);
 	songSource.start(0, position);
 	
+	lastTime = Date.now();
 	playing = true;
-	playTime = new Date().getTime();
 	
-	songSource.addEventListener("ended", function(){
-		this.disconnect(lowFilter);
-		this.disconnect(splitter);
-		this.disconnect(context.destination);
-		
-		playing = false;
-	});
+	songSource.addEventListener("ended", onSongSourceEnded);
 }
 
 function pause(){
@@ -258,8 +281,46 @@ function pause(){
 		return;
 	}
 	
-	position += (new Date().getTime() - playTime)/1000;
 	songSource.stop();
+}
+
+function refreshBarPosition(){
+	pGtx.clearRect(0, 0, pBar.width, pBar.height);
+	
+	var pixelPos = 0;
+	if(songBuffer){
+		pixelPos = position / songBuffer.duration * (pBar.width - 8); // 8px margin
+	}
+	
+	pixelPos = Math.min(pixelPos+4, pBar.width-4);
+	
+	pGtx.beginPath();
+		pGtx.strokeStyle = "#ecf0f1";
+		pGtx.shadowColor = "#ecf0f1";
+		pGtx.shadowBlur = 2;
+		pGtx.lineWidth = 4;
+		
+		pGtx.moveTo(4, pBar.height/2);
+		pGtx.lineTo(pixelPos, pBar.height/2);
+		
+		pGtx.stroke();
+	pGtx.closePath();
+}
+
+function setPosition(sec){
+	if(playing){
+		songSource.removeEventListener("ended", onSongSourceEnded)
+		songSource.stop();
+		onSongSourceEnded();
+		
+		position = sec;
+		
+		play();
+	}else{
+		position = sec;
+	}
+	
+	refreshBarPosition();
 }
 
 function initInput(){
@@ -318,16 +379,36 @@ function initInput(){
 			this.src = "play.png";
 			
 			pause();
+			this.isPlaying = false;
 		}else{
-			this.src = "pause.png";
-			
-			play();
+			if(!songBuffer){
+				alert("There is no song to play !\nTry to drag & drop one in the DSG disk !\n\nIf it still doesn't work, try a different format.");
+			}else{
+				this.src = "pause.png";
+				
+				play();
+				this.isPlaying = true;
+			}
 		}
-		
-		this.isPlaying = state;
 	};
 		
 	playPause.setPlaying(false);
+	
+	pBar = $("#progressBar")[0];
+	
+	pBar.addEventListener("mouseup", function(e){
+		if(!songBuffer){
+			return;
+		}
+		
+		var relX = e.clientX - (e.target.offsetLeft + 4);
+		relX = Math.max(0, relX);
+		relX = Math.min(e.target.width-4, relX);
+		
+		setPosition(relX / (e.target.width - 8) * songBuffer.duration);
+	});
+	
+	pGtx = pBar.getContext("2d");
 }
 
 function start(){
