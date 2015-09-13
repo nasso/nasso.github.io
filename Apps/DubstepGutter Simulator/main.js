@@ -50,6 +50,10 @@ var pBar;
 var pGtx;
 var currentTimeSpan;
 
+// Input for mobile
+var selectFiles;
+var fileInputTrick;
+
 // Compatibility cross-browser
 window.requestAnimationFrame = function(){
 	return (
@@ -382,6 +386,41 @@ function unsetFullScreen(elem){
 	}
 }
 
+function processFiles(files){
+	var imageFile;
+	var soundFile;
+	
+	for(var i = 0; i < files.length; i++){
+		if(files[i].type.match("image.*")){
+			imageFile = files[i];
+		}else if(files[i].type.match("audio.*")){
+			soundFile = files[i];
+		}
+	}
+	
+	if(imageFile){
+		var reader = new FileReader();
+		
+		reader.addEventListener("load", function(e){
+			picture = new Image();
+			picture.src = e.target.result;
+		});
+		
+		reader.readAsDataURL(imageFile);
+	}
+	if(soundFile){
+		var reader = new FileReader();
+		
+		reader.addEventListener("load", function(e){
+			context.decodeAudioData(e.target.result, function(buffer){
+				initSong(buffer);
+			});
+		});
+		
+		reader.readAsArrayBuffer(soundFile);
+	}
+}
+
 function initInput(){
 	canvas.addEventListener("dragover", function(e){
 		e.stopPropagation();
@@ -393,38 +432,7 @@ function initInput(){
 		e.stopPropagation();
 		e.preventDefault();
 		
-		var imageFile;
-		var soundFile;
-		
-		for(var i = 0; i < e.dataTransfer.files.length; i++){
-			if(e.dataTransfer.files[i].type.match("image.*")){
-				imageFile = e.dataTransfer.files[i];
-			}else if(e.dataTransfer.files[i].type.match("audio.*")){
-				soundFile = e.dataTransfer.files[i];
-			}
-		}
-		
-		if(imageFile){
-			var reader = new FileReader();
-			
-			reader.addEventListener("load", function(e){
-				picture = new Image();
-				picture.src = e.target.result;
-			});
-			
-			reader.readAsDataURL(imageFile);
-		}
-		if(soundFile){
-			var reader = new FileReader();
-			
-			reader.addEventListener("load", function(e){
-				context.decodeAudioData(e.target.result, function(buffer){
-					initSong(buffer);
-				});
-			});
-			
-			reader.readAsArrayBuffer(soundFile);
-		}
+		processFiles(files);
 	}, false);
 	
 	volumeInput = $("#volume")[0];
@@ -498,6 +506,22 @@ function initInput(){
 			unsetFullScreen(canvas);
 			document.exitPointerLock();
 		}
+	});
+	
+	fileInputTrick = $("#fileInputTrick")[0];
+	
+	$("#selectFiles").on("click", function(e){
+		if(e.button == 0){
+			e.preventDefault();
+			
+			$("#fileInputTrick").trigger("click");
+		}
+	});
+	
+	$("#fileInputTrick").on("change", function(e){
+		e.preventDefault();
+		
+		processFiles(e.target.files);
 	});
 }
 

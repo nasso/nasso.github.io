@@ -128,3 +128,7 @@ a.small{
 	height: 32px;
 	float: right;
 }
+
+#selectFiles{
+	margin-top: 16px;
+}
