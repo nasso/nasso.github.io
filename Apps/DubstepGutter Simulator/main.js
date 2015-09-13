@@ -432,7 +432,7 @@ function initInput(){
 		e.stopPropagation();
 		e.preventDefault();
 		
-		processFiles(files);
+		processFiles(e.dataTransfer.files);
 	}, false);
 	
 	volumeInput = $("#volume")[0];
