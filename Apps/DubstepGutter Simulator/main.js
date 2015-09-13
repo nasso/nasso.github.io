@@ -1,6 +1,6 @@
 var barsCount = 256;
-var maxBarsHeight = 128;
-var circleRadius = 64;
+var maxBarsHeight = 256;
+var circleRadius = 128;
 
 var rightDataLength = 64;
 var leftDataLength = 64;
@@ -37,9 +37,11 @@ var dsg;
 var picture;
 
 // Settings
+var fullscreenBtn;
+
 var playPause;
 var volumeInput;
-var imageShaking = 8;
+var imageShaking = 16;
 var bassMovementPower = 0.8;
 var endErrorBias = 0.1;
 
@@ -72,7 +74,7 @@ function initAudioContext(){
 	}
 	
 	lowAnalyser = context.createAnalyser();
-	lowAnalyser.fftSize = barsCount;
+	lowAnalyser.fftSize = 32;
 	lowAnalyser.minDecibels = -45;
 	lowAnalyser.maxDecibels = -16;
 	lowAnalyser.smoothingTimeConstant = 0.9;
@@ -134,6 +136,15 @@ function initCanvas(){
 	
 	// Images
 	dsg = $("#dsg")[0];
+	
+	// Compatibility
+	canvas.requestPointerLock = canvas.requestPointerLock ||
+								canvas.mozRequestPointerLock ||
+								canvas.webkitRequestPointerLock;
+	
+	document.exitPointerLock = 	document.exitPointerLock    ||
+								document.mozExitPointerLock ||
+								document.webkitExitPointerLock;
 }
 
 function visualize(){
@@ -160,7 +171,7 @@ function visualize(){
 	var factor = normHigher * bassMovementPower - bassMovementPower/2;
 	var radius = circleRadius + circleRadius * factor;
 	gtx.shadowBlur = 2 + (normHigher * 6);
-	gtx.lineWidth = 4 + (normHigher * 6);
+	gtx.lineWidth = 6 + (normHigher * 8);
 	var barsHeight = maxBarsHeight + maxBarsHeight * factor;
 	
 	gtx.clearRect(0, 0, canvas.width, canvas.height);
@@ -179,10 +190,10 @@ function visualize(){
 		var ratio = width/height;
 		
 		if(width > height){
-			width = canvas.width + imageShaking;
+			width = canvas.width + imageShaking*2;
 			height = width/ratio;
 		}else{
-			height = canvas.height + imageShaking;
+			height = canvas.height + imageShaking*2;
 			width = height * ratio;
 		}
 		
@@ -351,6 +362,26 @@ function setPosition(sec){
 	refreshBarPosition();
 }
 
+function setFullScreen(elem){
+	if(elem.requestFullscreen){
+		elem.requestFullscreen();
+	}else if(elem.mozRequestFullScreen){
+		elem.mozRequestFullScreen();
+	}else if(elem.webkitRequestFullscreen){
+		elem.webkitRequestFullscreen();
+	}
+}
+
+function unsetFullScreen(elem){
+	if(elem.cancelFullscreen){
+		elem.requestFullscreen();
+	}else if(elem.mozCancelFullScreen){
+		elem.mozRequestFullScreen();
+	}else if(elem.webkitCancelFullscreen){
+		elem.webkitRequestFullscreen();
+	}
+}
+
 function initInput(){
 	canvas.addEventListener("dragover", function(e){
 		e.stopPropagation();
@@ -362,9 +393,18 @@ function initInput(){
 		e.stopPropagation();
 		e.preventDefault();
 		
-		var file = e.dataTransfer.files[0];
+		var imageFile;
+		var soundFile;
 		
-		if(file.type.match("image.*")){
+		for(var i = 0; i < e.dataTransfer.files.length; i++){
+			if(e.dataTransfer.files[i].type.match("image.*")){
+				imageFile = e.dataTransfer.files[i];
+			}else if(e.dataTransfer.files[i].type.match("audio.*")){
+				soundFile = e.dataTransfer.files[i];
+			}
+		}
+		
+		if(imageFile){
 			var reader = new FileReader();
 			
 			reader.addEventListener("load", function(e){
@@ -372,8 +412,9 @@ function initInput(){
 				picture.src = e.target.result;
 			});
 			
-			reader.readAsDataURL(file);
-		}else{
+			reader.readAsDataURL(imageFile);
+		}
+		if(soundFile){
 			var reader = new FileReader();
 			
 			reader.addEventListener("load", function(e){
@@ -382,7 +423,7 @@ function initInput(){
 				});
 			});
 			
-			reader.readAsArrayBuffer(file);
+			reader.readAsArrayBuffer(soundFile);
 		}
 	}, false);
 	
@@ -438,6 +479,26 @@ function initInput(){
 	
 	pGtx = pBar.getContext("2d");
 	currentTimeSpan = $("#currentTime")[0];
+	
+	fullscreenBtn = $("#fullscreen")[0];
+	
+	fullscreenBtn.addEventListener("mousedown", function(e){
+		if(e.button == 0){
+			setFullScreen(canvas);
+			canvas.requestPointerLock();
+		}
+	});
+	
+	window.addEventListener("keyup", function(e){
+		var e = window.event || e;
+		
+		if(e.keyCode == 27){
+			e.preventDefault();
+			
+			unsetFullScreen(canvas);
+			document.exitPointerLock();
+		}
+	});
 }
 
 function start(){
