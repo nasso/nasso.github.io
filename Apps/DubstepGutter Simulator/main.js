@@ -1,6 +1,6 @@
 var barsCount = 256;
-var maxBarsHeight = 256;
-var circleRadius = 128;
+var maxBarsHeight = 144;
+var circleRadius = 80;
 
 var rightDataLength = 64;
 var leftDataLength = 64;
@@ -38,10 +38,12 @@ var picture;
 
 // Settings
 var fullscreenBtn;
+var isFullscreen = false;
+var sizeFactor = 1.0;
 
 var playPause;
 var volumeInput;
-var imageShaking = 16;
+var imageShaking = 8;
 var bassMovementPower = 0.8;
 var endErrorBias = 0.1;
 
@@ -152,6 +154,28 @@ function initCanvas(){
 }
 
 function visualize(){
+	if(window.fullScreen === false){
+		if(canvas.width != 1280){
+			canvas.width = 1280;
+		}
+		if(canvas.height != 720){
+			canvas.height = 720;
+		}
+		if(sizeFactor != 1){
+			sizeFactor = 1;
+		}
+	}else if(window.fullScreen === true){
+		if(canvas.width != 1920){
+			canvas.width = 1920;
+		}
+		if(canvas.height != 1080){
+			canvas.height = 1080;
+		}
+		if(sizeFactor != 2){
+			sizeFactor = 2;
+		}
+	}
+	
 	if(playing){
 		position += (Date.now() - lastTime)/1000;
 		lastTime = Date.now();
@@ -175,8 +199,12 @@ function visualize(){
 	var factor = normHigher * bassMovementPower - bassMovementPower/2;
 	var radius = circleRadius + circleRadius * factor;
 	gtx.shadowBlur = 2 + (normHigher * 6);
-	gtx.lineWidth = 6 + (normHigher * 8);
+	gtx.lineWidth = 4 + (normHigher * 6);
 	var barsHeight = maxBarsHeight + maxBarsHeight * factor;
+	
+	gtx.shadowBlur = gtx.shadowBlur * sizeFactor;
+	gtx.lineWidth = gtx.lineWidth * sizeFactor;
+	radius = radius * sizeFactor;
 	
 	gtx.clearRect(0, 0, canvas.width, canvas.height);
 	
@@ -187,6 +215,8 @@ function visualize(){
 		if(playing){
 			xShake = (Math.random()-0.5) * (normHigher * imageShaking);
 			yShake = (Math.random()-0.5) * (normHigher * imageShaking);
+			xShake = xShake * sizeFactor;
+			yShake = yShake * sizeFactor;
 		}
 		
 		var width = picture.width;
@@ -194,10 +224,10 @@ function visualize(){
 		var ratio = width/height;
 		
 		if(width > height){
-			width = canvas.width + imageShaking*2;
+			width = canvas.width + imageShaking * sizeFactor * 2;
 			height = width/ratio;
 		}else{
-			height = canvas.height + imageShaking*2;
+			height = canvas.height + imageShaking * sizeFactor * 2;
 			width = height * ratio;
 		}
 		
@@ -210,7 +240,7 @@ function visualize(){
 	gtx.beginPath();
 		for(var i = 0; i < leftDataLength; i++){
 			var normData = Math.pow(leftData[i] / 255, 2);
-			var height = normData * barsHeight;
+			var height = normData * barsHeight * sizeFactor;
 			height = Math.max(height, 2);
 			
 			gtx.moveTo(canvas.width/2, canvas.height/2);
@@ -224,7 +254,7 @@ function visualize(){
 		
 		for(var i = 0; i < rightDataLength; i++){
 			var normData = Math.pow(rightData[i] / 255, 2);
-			var height = normData * barsHeight;
+			var height = normData * barsHeight * sizeFactor;
 			height = Math.max(height, 2);
 			
 			gtx.moveTo(canvas.width/2, canvas.height/2);
@@ -386,6 +416,37 @@ function unsetFullScreen(elem){
 	}
 }
 
+function processImageFile(imageFile){
+	if(!imageFile.type.match("image.*")){
+		return;
+	}
+	
+	var reader = new FileReader();
+	
+	reader.addEventListener("load", function(e){
+		picture = new Image();
+		picture.src = e.target.result;
+	});
+	
+	reader.readAsDataURL(imageFile);
+}
+
+function processAudioFile(soundFile){
+	if(!soundFile.type.match("audio.*")){
+		return;
+	}
+	
+	var reader = new FileReader();
+	
+	reader.addEventListener("load", function(e){
+		context.decodeAudioData(e.target.result, function(buffer){
+			initSong(buffer);
+		});
+	});
+	
+	reader.readAsArrayBuffer(soundFile);
+}
+
 function processFiles(files){
 	var imageFile;
 	var soundFile;
@@ -399,25 +460,10 @@ function processFiles(files){
 	}
 	
 	if(imageFile){
-		var reader = new FileReader();
-		
-		reader.addEventListener("load", function(e){
-			picture = new Image();
-			picture.src = e.target.result;
-		});
-		
-		reader.readAsDataURL(imageFile);
+		processImageFile(imageFile);
 	}
 	if(soundFile){
-		var reader = new FileReader();
-		
-		reader.addEventListener("load", function(e){
-			context.decodeAudioData(e.target.result, function(buffer){
-				initSong(buffer);
-			});
-		});
-		
-		reader.readAsArrayBuffer(soundFile);
+		processAudioFile(soundFile);
 	}
 }
 
@@ -458,8 +504,8 @@ function initInput(){
 			pause();
 			this.isPlaying = false;
 		}else{
-			if(!songBuffer){
-				alert("There is no song to play !\nTry to drag & drop one in the DSG disk !\n\nIf it still doesn't work, try a different format.");
+			if(!songBuffer.duration){
+				alert("There is no song to play !\nTry to drag & drop one on the DSG disk !\n\nIf it still doesn't work, try a different format.");
 			}else{
 				this.src = "pause.png";
 				
@@ -474,7 +520,7 @@ function initInput(){
 	pBar = $("#progressBar")[0];
 	
 	pBar.addEventListener("mouseup", function(e){
-		if(!songBuffer){
+		if(!songBuffer.duration){
 			return;
 		}
 		
@@ -492,19 +538,28 @@ function initInput(){
 	
 	fullscreenBtn.addEventListener("mousedown", function(e){
 		if(e.button == 0){
+			sizeFactor = 2.0;
+			canvas.width = 1920;
+			canvas.height = 1080;
+			
 			setFullScreen(canvas);
 			canvas.requestPointerLock();
+			isFullscreen = true;
 		}
 	});
 	
 	window.addEventListener("keyup", function(e){
 		var e = window.event || e;
+		e.preventDefault();
 		
-		if(e.keyCode == 27){
-			e.preventDefault();
+		if((e.keyCode == 27 || e.keyCode == 122) && isFullscreen){
+			sizeFactor = 1.0;
+			canvas.width = 1280;
+			canvas.height = 720;
 			
 			unsetFullScreen(canvas);
 			document.exitPointerLock();
+			isFullscreen = false;
 		}
 	});
 	
