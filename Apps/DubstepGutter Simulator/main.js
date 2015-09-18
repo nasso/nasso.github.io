@@ -137,7 +137,6 @@ function initCanvas(){
 		throw new Error("Error while getting the canvas element");
 	}
 	
-	gtx.lineWidth = 8;
 	gtx.shadowColor = "#ecf0f1";
 	
 	// Images
@@ -208,6 +207,11 @@ function visualize(){
 	
 	gtx.clearRect(0, 0, canvas.width, canvas.height);
 	
+	var xCircleShake = (Math.random()-0.5) * (normHigher * imageShaking);
+	var yCircleShake = (Math.random()-0.5) * (normHigher * imageShaking);
+	xCircleShake = xCircleShake * sizeFactor;
+	yCircleShake = yCircleShake * sizeFactor;
+	
 	if(picture){
 		var xShake = 0;
 		var yShake = 0;
@@ -243,13 +247,13 @@ function visualize(){
 			var height = normData * barsHeight * sizeFactor;
 			height = Math.max(height, 2);
 			
-			gtx.moveTo(canvas.width/2, canvas.height/2);
+			gtx.moveTo(canvas.width/2 + xCircleShake, canvas.height/2 + yCircleShake);
 			
 			var angle = i/leftDataLength * Math.PI;
 			var x = Math.cos(angle) * (radius + height);
 			var y = Math.sin(angle) * (radius + height);
 			
-			gtx.lineTo(canvas.width/2 + x, canvas.height/2 + y);
+			gtx.lineTo(canvas.width/2 + x + xCircleShake, canvas.height/2 + y + yCircleShake);
 		}
 		
 		for(var i = 0; i < rightDataLength; i++){
@@ -267,11 +271,12 @@ function visualize(){
 		}
 		
 		gtx.strokeStyle = "#ecf0f1";
+		gtx.lineCap = "round";
 		gtx.stroke();
 	gtx.closePath();
 	
-	gtx.drawImage(dsg, canvas.width/2 - radius, canvas.height/2 - radius, radius*2, radius*2);
-		
+	gtx.drawImage(dsg, (canvas.width/2 - radius) + xCircleShake, (canvas.height/2 - radius) + yCircleShake, radius*2, radius*2);
+	
 	// CALL IT NEXT FRAME
 	window.requestAnimationFrame(visualize);
 }

@@ -40,7 +40,7 @@ header{
 	width: 1024;
 	height: 512;
 	border: 1px solid #2c3e50;
-	background-color: #2c3e50;
+	background-color: black;
 	box-shadow: 0px 0px 4px black inset;
 	display: inline-block;
 }
