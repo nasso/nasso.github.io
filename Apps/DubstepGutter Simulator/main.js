@@ -197,8 +197,7 @@ function visualize(){
 	
 	var factor = normHigher * bassMovementPower - bassMovementPower/2;
 	var radius = circleRadius + circleRadius * factor;
-	gtx.shadowBlur = 2 + (normHigher * 6);
-	gtx.lineWidth = 4 + (normHigher * 6);
+	gtx.shadowBlur = 6 + (normHigher * 6);
 	var barsHeight = maxBarsHeight + maxBarsHeight * factor;
 	
 	gtx.shadowBlur = gtx.shadowBlur * sizeFactor;
@@ -207,10 +206,8 @@ function visualize(){
 	
 	gtx.clearRect(0, 0, canvas.width, canvas.height);
 	
-	var xCircleShake = (Math.random()-0.5) * (normHigher * imageShaking);
-	var yCircleShake = (Math.random()-0.5) * (normHigher * imageShaking);
-	xCircleShake = xCircleShake * sizeFactor;
-	yCircleShake = yCircleShake * sizeFactor;
+	var xCircleShake = (Math.random()-0.5) * (normHigher * imageShaking) * sizeFactor;
+	var yCircleShake = (Math.random()-0.5) * (normHigher * imageShaking) * sizeFactor;
 	
 	if(picture){
 		var xShake = 0;
@@ -242,37 +239,56 @@ function visualize(){
 	}
 	
 	gtx.beginPath();
+		gtx.moveTo(canvas.width/2 + xCircleShake, canvas.height/2 + yCircleShake);
+		
+		// Left (top)
 		for(var i = 0; i < leftDataLength; i++){
 			var normData = Math.pow(leftData[i] / 255, 2);
 			var height = normData * barsHeight * sizeFactor;
 			height = Math.max(height, 2);
 			
-			gtx.moveTo(canvas.width/2 + xCircleShake, canvas.height/2 + yCircleShake);
-			
-			var angle = i/leftDataLength * Math.PI;
+			var angle = i/(leftDataLength + 1) * Math.PI;
 			var x = Math.cos(angle) * (radius + height);
 			var y = Math.sin(angle) * (radius + height);
 			
 			gtx.lineTo(canvas.width/2 + x + xCircleShake, canvas.height/2 + y + yCircleShake);
+			
+			angle = (i + 1)/(leftDataLength + 1) * Math.PI;
+			x = Math.cos(angle) * (radius + height);
+			y = Math.sin(angle) * (radius + height);
+			
+			gtx.lineTo(canvas.width/2 + x + xCircleShake, canvas.height/2 + y + yCircleShake);
 		}
+		
+		// Finish the circle
+		gtx.lineTo(canvas.width/2 - (radius + height) + xCircleShake, canvas.height/2 + yCircleShake);
+		
+		// Right (bottom)
+		gtx.moveTo(canvas.width/2 + xCircleShake, canvas.height/2 + yCircleShake);
 		
 		for(var i = 0; i < rightDataLength; i++){
 			var normData = Math.pow(rightData[i] / 255, 2);
 			var height = normData * barsHeight * sizeFactor;
 			height = Math.max(height, 2);
 			
-			gtx.moveTo(canvas.width/2, canvas.height/2);
-			
-			var angle = i/rightDataLength * Math.PI + Math.PI;
+			var angle = i/(rightDataLength + 1) * Math.PI + Math.PI;
 			var x = Math.cos(angle) * (radius + height);
 			var y = Math.sin(angle) * (radius + height);
 			
-			gtx.lineTo(canvas.width/2 + x, canvas.height/2 + y);
+			gtx.lineTo(canvas.width/2 + x + xCircleShake, canvas.height/2 + y + yCircleShake);
+			
+			angle = (i + 1)/(rightDataLength + 1) * Math.PI + Math.PI;
+			x = Math.cos(angle) * (radius + height);
+			y = Math.sin(angle) * (radius + height);
+			
+			gtx.lineTo(canvas.width/2 + x + xCircleShake, canvas.height/2 + y + yCircleShake);
 		}
 		
-		gtx.strokeStyle = "#ecf0f1";
-		gtx.lineCap = "round";
-		gtx.stroke();
+		// Finish the circle
+		gtx.lineTo(canvas.width/2 + radius + height + xCircleShake, canvas.height/2 + yCircleShake);
+		
+		gtx.fillStyle = "#ecf0f1";
+		gtx.fill();
 	gtx.closePath();
 	
 	gtx.drawImage(dsg, (canvas.width/2 - radius) + xCircleShake, (canvas.height/2 - radius) + yCircleShake, radius*2, radius*2);
@@ -339,10 +355,11 @@ function refreshBarPosition(){
 	pGtx.clearRect(0, 0, pBar.width, pBar.height);
 	
 	var totalDuration = 0;
+	var pixelPos = 0;
 	if(songBuffer){
 		totalDuration = songBuffer.duration;
+		pixelPos = position / totalDuration * (pBar.width - 8); // 8px margin;
 	}
-	var pixelPos = position / totalDuration * (pBar.width - 8); // 8px margin;
 	
 	pixelPos = Math.min(pixelPos+4, pBar.width-4);
 	
