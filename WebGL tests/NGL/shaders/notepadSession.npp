@@ -1,0 +1,18 @@
+<NotepadPlus>
+    <Session activeView="0">
+        <mainView activeIndex="4">
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="1260" startPos="417" endPos="0" selMode="0" lang="GLSL" encoding="-1" filename="C:\wamp\www\NGL\shaders\material.vs" backupFilePath="" originalFileLastModifTimestamp="1447599480" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="576" startPos="204" endPos="0" selMode="0" lang="GLSL" encoding="-1" filename="C:\wamp\www\NGL\shaders\color.vs" backupFilePath="" originalFileLastModifTimestamp="1447512578" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="612" startPos="14" endPos="14" selMode="0" lang="GLSL" encoding="-1" filename="C:\wamp\www\NGL\shaders\font.vs" backupFilePath="" originalFileLastModifTimestamp="1447791534" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="520" startPos="201" endPos="201" selMode="0" lang="GLSL" encoding="-1" filename="C:\wamp\www\NGL\shaders\skybox.vs" backupFilePath="" originalFileLastModifTimestamp="1447873923" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="809" startPos="412" endPos="412" selMode="0" lang="GLSL" encoding="-1" filename="C:\wamp\www\NGL\shaders\terrain.vs" backupFilePath="" originalFileLastModifTimestamp="1448456460" />
+        </mainView>
+        <subView activeIndex="4">
+            <File firstVisibleLine="3" xOffset="0" scrollWidth="1635" startPos="1637" endPos="1637" selMode="0" lang="GLSL" encoding="-1" filename="C:\wamp\www\NGL\shaders\material.fs" backupFilePath="" originalFileLastModifTimestamp="1448459359" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="820" startPos="71" endPos="71" selMode="0" lang="GLSL" encoding="-1" filename="C:\wamp\www\NGL\shaders\color.fs" backupFilePath="" originalFileLastModifTimestamp="1447867153" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="1260" startPos="197" endPos="197" selMode="0" lang="GLSL" encoding="-1" filename="C:\wamp\www\NGL\shaders\font.fs" backupFilePath="" originalFileLastModifTimestamp="1447873485" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="912" startPos="396" endPos="396" selMode="0" lang="GLSL" encoding="-1" filename="C:\wamp\www\NGL\shaders\skybox.fs" backupFilePath="" originalFileLastModifTimestamp="1448054542" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="1080" startPos="310" endPos="310" selMode="0" lang="GLSL" encoding="-1" filename="C:\wamp\www\NGL\shaders\terrain.fs" backupFilePath="" originalFileLastModifTimestamp="1448480398" />
+        </subView>
+    </Session>
+</NotepadPlus>
