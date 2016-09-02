@@ -1,19 +1,4 @@
 /* FONTS */
-
-/*
-Folowing is not used
-
-@font-face {
-	font-family: "Roboto";
-	src: url("Roboto.ttf");
-}
-
-@font-face {
-	font-family: "Roboto light";
-	src: url("Roboto-Light.ttf");
-}
-*/
-
 @font-face {
 	font-family: "Roboto medium";
 	src: url("Roboto-Medium.ttf");
@@ -64,7 +49,7 @@ html, body {
 	margin: auto;
 }
 
-*:-webkit-full-screen{
+*:-webkit-full-screen {
 	width: 100%;
 	height: 100%;
 }
@@ -73,7 +58,7 @@ hr {
 	border: 1px solid #34495E;
 }
 
-canvas{
+canvas {
 	display: inline-block;
 	box-shadow: 0px 0px 4px black;
 	float: left;
@@ -100,7 +85,7 @@ a {
 	text-decoration: none;
 }
 
-a:hover, input[type=radio]:checked + label,  input[type=radio]:hover + label{
+a:hover, input[type=radio]:checked + label,  input[type=radio]:hover + label {
 	background-color: #27AE60;
 }
 
@@ -122,10 +107,10 @@ article {
 	overflow: hidden;
 }
 
-article .descAndLinks{
+article .descAndLinks {
 	vertical-align: top;
 	display: inline-block;
-	text-align: left;
+	text-align: center;
 }
 
 article aside {
@@ -147,15 +132,11 @@ ul {
 	display: inline-block;
 }
 
-ul li a {
-	width: 100%;
-}
-
 input[type=radio] {
 	display: none;
 }
 
-input[type=radio] + label{
+input[type=radio] + label {
 	transition: background-color 500ms;
 	-o-transition: background-color 500ms;
 	-moz-transition: background-color 500ms;
@@ -172,7 +153,7 @@ input[type=radio] + label{
 	line-height: 24px;
 }
 
-footer{
+footer {
 	position: absolute;
 	width: 100%;
 	bottom: 0px;

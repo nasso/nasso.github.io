@@ -1,0 +1,232 @@
+* {
+	box-sizing: border-box;
+	
+	font-family: Sans-Serif;
+	
+	color: white;
+	
+	margin: 0px;
+	padding: 0px;
+}
+
+body {
+	position: absolute;
+	top: 0%;
+	bottom: 0%;
+	right: 0%;
+	left: 0%;
+	
+	background-color: black;
+}
+
+canvas {
+	display: inline-block;
+	
+	position: fixed;
+	top: 0px;
+	left: 0px;
+	right: 0px;
+	bottom: 0px;
+	
+	width: 100%;
+	height: 100%;
+	
+	z-index: 0;
+}
+
+#audioElement {
+	display: inline-block;
+	
+	width: 100%;
+	
+	position: fixed;
+	bottom: 0%;
+	left: 0%;
+	right: 0%;
+	
+	background: black;
+	
+	z-index: 20;
+}
+
+#settingsHeader {
+	padding: 0px;
+	margin: 0px;
+	
+	display: inline-block;
+	
+	background: rgba(0, 0, 0, 0.2);
+	
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	
+	width: 50px;
+	height: 50px;
+	padding-left: 50px;
+	
+	overflow-x: hidden;
+	
+	transition: width 200ms;
+	-o-transition: width 200ms;
+	-moz-transition: width 200ms;
+	-webkit-transition: width 200ms;
+	
+	z-index: 10;
+}
+
+#settingsNav * {
+	text-shadow: 0px 1px 0px black;
+}
+
+#settingsNav.activated #settingsHeader {
+	width: 320px;
+}
+
+#settingsHeader h3 {
+	display: inline-block;
+	
+	font-size: 1.3em;
+	
+	margin: 0px 16px;
+	
+	position: absolute;
+	top: 45%;
+	
+	transform: translateY(-50%);
+	-o-transform: translateY(-50%);
+	-moz-transform: translateY(-50%);
+	-webkit-transform: translateY(-50%);
+}
+
+#hambParent {
+	display: inline-block;
+	
+	cursor: default;
+	
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	
+	width: 50px;
+	height: 50px;
+	
+	background: rgba(0, 0, 0, 0.2);
+}
+
+#hamb {
+	display: inline-block;
+	
+	text-shadow: none;
+	
+	margin: 0px;
+	padding: 0px;
+	
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	
+	transform:;
+	-o-transform: translateY(-50%) translateX(-50%);
+	-moz-transform: translateY(-50%) translateX(-50%);
+	-webkit-transform: translateY(-50%) translateX(-50%);
+	
+	transition: transform 200ms;
+	-o-transition: -o-transform 200ms;
+	-moz-transition: -moz-transform 200ms;
+	-webkit-transition: -webkit-transform 200ms;
+}
+
+#settingsNav.activated #hamb {
+	transform: translateY(-50%) translateX(-50%) rotateZ(90deg);
+	-o-transform: translateY(-50%) translateX(-50%) rotateZ(90deg);
+	-moz-transform: translateY(-50%) translateX(-50%) rotateZ(90deg);
+	-webkit-transform: translateY(-50%) translateX(-50%) rotateZ(90deg);
+}
+
+#settingsCtrlsContainer {
+	display: inline-block;
+	
+	position: absolute;
+	top: 50px;
+	left: 0px;
+	right: 0px;
+	
+	
+	height: 0vh;
+	width: 50px;
+	
+	overflow: hidden;
+	overflow-y: hidden;
+	
+	transition: width 200ms, height 200ms;
+	-o-transition: width 200ms, height 200ms;
+	-moz-transition: width 200ms, height 200ms;
+	-webkit-transition: width 200ms, height 200ms;
+}
+
+#settingsNav.activated #settingsCtrlsContainer {
+	height: 70vh;
+	width: 320px;
+	
+	overflow-y: auto;
+}
+
+#settingsCtrlsList {
+	list-style: none;
+	
+	margin: 0px;
+	padding: 0px;
+}
+
+.settingsCtrl {
+	display: inline-block;
+	
+	background: rgba(0, 0, 0, 0.4);
+	
+	width: 100%;
+	height: 40px;
+	
+	vertical-align: middle;
+	line-height: 40px;
+	
+	border-left: 4px solid #3498db;
+	padding-left: 10px;
+}
+
+.ctrlName {
+	display: inline-block;
+	
+	width: 70%;
+	border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ctrlInput {
+	display: inline-block;
+	
+	background: rgba(0, 0, 0, 0.2);
+	
+	border: none;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+	
+	float: right;
+	
+	width: 30%;
+	height: 100%;
+	padding: 0px 12px;
+}
+
+select.ctrlInput {
+	padding: 0px 8px;
+}
+
+/* For combo boxes */
+.ctrlInput option {
+	background: white;
+	color: black;
+}
+
+/* This removes the bottom border of the last setting cuz it looks better */
+.settingsCtrl:last-of-type .ctrlInput {
+	border: none;
+}
