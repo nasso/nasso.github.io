@@ -6,247 +6,203 @@ var drawMode = {
 	outline: 2
 };
 
-function createSection(defaultValues) {
-	var sec = {
-		minDecibels: -100,
-		maxDecibels: -20,
-		barCount: 32,
-		freqStart: 0,
-		freqEnd: 0.03,
-		barsWidth: 0.060,
-		barsStartX: -1,
-		barsEndX: 1,
-		barsY: -0.5,
-		color: 'white',
-		barsPow: 2,
-		barsHeight: 0.7,
-		barsMinHeight: 0.01,
-		glowness: 0.0,
-		
-		polar: 0.0,
-		mode: drawMode.lines,
-		clampShapeToZero: true,
-		closeShape: true
-	};
+function Section(p) {
+	p = p || {};
 	
-	if(defaultValues) {
-		for(var x in defaultValues) {
-			if(sec[x] !== undefined) {
-				sec[x] = defaultValues[x];
-			}
+	this.name = 'A section';
+	this.minDecibels = p.minDecibels !== undefined ? p.minDecibels : -100;
+	this.maxDecibels = p.maxDecibels !== undefined ? p.maxDecibels : -20;
+	this.barCount = p.barCount !== undefined ? p.barCount : 32;
+	this.freqStart = p.freqStart !== undefined ? p.freqStart : 0;
+	this.freqEnd = p.freqEnd !== undefined ? p.freqEnd : 0.03;
+	this.barsWidth = p.barsWidth !== undefined ? p.barsWidth : 0.060;
+	this.barsStartX = p.barsStartX !== undefined ? p.barsStartX : -1;
+	this.barsEndX = p.barsEndX !== undefined ? p.barsEndX : 1;
+	this.barsY = p.barsY !== undefined ? p.barsY : -0.5;
+	this.color = p.color !== undefined ? p.color : 'white';
+	this.barsPow = p.barsPow !== undefined ? p.barsPow : 2;
+	this.barsHeight = p.barsHeight !== undefined ? p.barsHeight : 0.7;
+	this.barsMinHeight = p.barsMinHeight !== undefined ? p.barsMinHeight : 0.01;
+	this.glowness = p.glowness !== undefined ? p.glowness : 0.0;
+	this.polar = p.polar !== undefined ? p.polar : 0.0;
+	this.mode = p.mode !== undefined ? p.mode : drawMode.lines;
+	this.clampShapeToZero = p.clampShapeToZero !== undefined ? p.clampShapeToZero : true;
+	this.closeShape = p.closeShape !== undefined ? p.closeShape : true;
+	this.drawLast = p.drawLast !== undefined ? p.drawLast : true;
+}
+
+function Settings(p) {
+	this.set(p);
+}
+Settings.prototype.addSection = function(p) {
+	this.sections.push(new Section(p));
+	
+	return this;
+};
+Settings.prototype.set = function(p) {
+	p = p || {};
+	
+	this.smoothingTimeConstant = p.smoothingTimeConstant !== undefined ? p.smoothingTimeConstant : 0.65;
+	
+	this.sections = [];
+	if(Array.isArray(p.sections)) {
+		for(var i = 0; i < p.sections.length; i++) {
+			this.addSection(p.sections[i]);
 		}
 	}
 	
-	return sec;
-}
-
-function createSettings(defaultValues) {
-	var settings = {
-		smoothingTimeConstant: 0.65,
-		
-		sections: [ createSection() ],
-		
-		imageX: 0,
-		imageY: 0,
-		imageWidth: 0.4,
-		imageHeight: 0.4,
-		
-		backgroundColor: '#2A2C31'
-	};
+	this.imageX = p.imageX !== undefined ? p.imageX : 0;
+	this.imageY = p.imageY !== undefined ? p.imageY : 0;
+	this.imageWidth = p.imageWidth !== undefined ? p.imageWidth : 0.4;
+	this.imageHeight = p.imageHeight !== undefined ? p.imageHeight : 0.4;
 	
-	if(defaultValues) {
-		for(var x in defaultValues) {
-			if(settings[x] !== undefined) {
-				if(Array.isArray(settings[x])) {
-					if(Array.isArray(defaultValues[x])) {
-						for(var i = 0; i < defaultValues[x].length; i++) {
-							settings[x][i] = createSection(defaultValues[x][i]);
-						}
-					}
-				} else {
-					settings[x] = defaultValues[x];
-				}
-			}
-		}
-	}
-	
-	return settings;
-}
-
-var settingsPresets = {
-	'Default': createSettings(),
-	'Image disk': createSettings({
-		smoothingTimeConstant: 0.65,
-		
-		sections: [
-			{
-				minDecibels: -48,
-				maxDecibels: -20,
-				barCount: 128,
-				freqStart: 0,
-				freqEnd: 0.015,
-				barsWidth: 0.008,
-				barsStartX: -0.5,
-				barsEndX: 0.5,
-				barsY: 0.4,
-				color: 'white',
-				barsPow: 3,
-				barsHeight: 0.25,
-				barsMinHeight: 0.005,
-				glowness: 0.0,
-				
-				polar: 1.0,
-				mode: drawMode.fill,
-				clampShapeToZero: false,
-				closeShape: false
-			},
-			{
-				minDecibels: -48,
-				maxDecibels: -20,
-				barCount: 128,
-				freqStart: 0,
-				freqEnd: 0.015,
-				barsWidth: 0.008,
-				barsStartX: 1.5,
-				barsEndX: 0.5,
-				barsY: 0.4,
-				color: 'white',
-				barsPow: 3,
-				barsHeight: 0.25,
-				barsMinHeight: 0.005,
-				glowness: 0.0,
-				
-				polar: 1.0,
-				mode: drawMode.fill,
-				clampShapeToZero: false,
-				closeShape: false
-			}
-		],
-		
-		imageX: 0,
-		imageY: 0,
-		imageWidth: 0.8,
-		imageHeight: 0.8
-	}),
-	'Rebellion': createSettings({
-		smoothingTimeConstant: 0.5,
-		
-		sections: [
-			{
-				minDecibels: -54,
-				maxDecibels: -25,
-				barCount: 128,
-				freqStart: 0.015,
-				freqEnd: 0.030,
-				barsWidth: 0.008,
-				barsStartX: -0.5,
-				barsEndX: 0.5,
-				barsY: 0.4,
-				color: "#bdc3c7",
-				barsPow: 2,
-				barsHeight: 0.25,
-				barsMinHeight: 0.005,
-				glowness: 0.0,
-				
-				polar: 1.0,
-				mode: drawMode.outline,
-				clampShapeToZero: false,
-				closeShape: false
-			},
-			{
-				minDecibels: -54,
-				maxDecibels: -25,
-				barCount: 128,
-				freqStart: 0.015,
-				freqEnd: 0.030,
-				barsWidth: 0.008,
-				barsStartX: 1.5,
-				barsEndX: 0.5,
-				barsY: 0.4,
-				color: "#bdc3c7",
-				barsPow: 2,
-				barsHeight: 0.25,
-				barsMinHeight: 0.005,
-				glowness: 0.0,
-				
-				polar: 1.0,
-				mode: drawMode.outline,
-				clampShapeToZero: false,
-				closeShape: false
-			},
-			{
-				minDecibels: -48,
-				maxDecibels: -20,
-				barCount: 128,
-				freqStart: 0,
-				freqEnd: 0.015,
-				barsWidth: 0.008,
-				barsStartX: -0.5,
-				barsEndX: 0.5,
-				barsY: 0.4,
-				color: "#ffffff",
-				barsPow: 3,
-				barsHeight: 0.25,
-				barsMinHeight: 0.005,
-				glowness: 0.0,
-				
-				polar: 1.0,
-				mode: drawMode.fill,
-				clampShapeToZero: false,
-				closeShape: false
-			},
-			{
-				minDecibels: -48,
-				maxDecibels: -20,
-				barCount: 128,
-				freqStart: 0,
-				freqEnd: 0.015,
-				barsWidth: 0.008,
-				barsStartX: 1.5,
-				barsEndX: 0.5,
-				barsY: 0.4,
-				color: "#ffffff",
-				barsPow: 3,
-				barsHeight: 0.25,
-				barsMinHeight: 0.005,
-				glowness: 0.0,
-				
-				polar: 1.0,
-				mode: drawMode.fill,
-				clampShapeToZero: false,
-				closeShape: false
-			}
-		],
-		
-		imageX: 0,
-		imageY: 0,
-		imageWidth: 0.8,
-		imageHeight: 0.8
-	})
+	this.backgroundColor = p.backgroundColor !== undefined ? p.backgroundColor : '#2A2C31';
 };
 
-var settings = createSettings();
+var settingsPresets = {
+	'Default': new Settings().addSection(),
+	'Image disk': new Settings({
+			smoothingTimeConstant: 0.65,
+			imageX: 0,
+			imageY: 0,
+			imageWidth: 0.8,
+			imageHeight: 0.8
+		}).addSection({
+			minDecibels: -48,
+			maxDecibels: -20,
+			barCount: 128,
+			freqStart: 0,
+			freqEnd: 0.015,
+			barsWidth: 0.008,
+			barsStartX: -0.5,
+			barsEndX: 0.5,
+			barsY: 0.4,
+			color: 'white',
+			barsPow: 3,
+			barsHeight: 0.25,
+			barsMinHeight: 0.005,
+			glowness: 0.0,
+			
+			polar: 1.0,
+			mode: drawMode.fill,
+			clampShapeToZero: false,
+			closeShape: false
+		}).addSection({
+			minDecibels: -48,
+			maxDecibels: -20,
+			barCount: 128,
+			freqStart: 0,
+			freqEnd: 0.015,
+			barsWidth: 0.008,
+			barsStartX: 1.5,
+			barsEndX: 0.5,
+			barsY: 0.4,
+			color: 'white',
+			barsPow: 3,
+			barsHeight: 0.25,
+			barsMinHeight: 0.005,
+			glowness: 0.0,
+			
+			polar: 1.0,
+			mode: drawMode.fill,
+			clampShapeToZero: false,
+			closeShape: false
+		}), 
+	'Rebellion': new Settings({
+			smoothingTimeConstant: 0.5,
+			imageX: 0,
+			imageY: 0,
+			imageWidth: 0.8,
+			imageHeight: 0.8
+		}).addSection({
+			minDecibels: -54,
+			maxDecibels: -25,
+			barCount: 128,
+			freqStart: 0.015,
+			freqEnd: 0.030,
+			barsWidth: 0.008,
+			barsStartX: -0.5,
+			barsEndX: 0.5,
+			barsY: 0.4,
+			color: "#bdc3c7",
+			barsPow: 2,
+			barsHeight: 0.25,
+			barsMinHeight: 0.005,
+			glowness: 0.0,
+			
+			polar: 1.0,
+			mode: drawMode.outline,
+			clampShapeToZero: false,
+			closeShape: false
+		}).addSection({
+			minDecibels: -54,
+			maxDecibels: -25,
+			barCount: 128,
+			freqStart: 0.015,
+			freqEnd: 0.030,
+			barsWidth: 0.008,
+			barsStartX: 1.5,
+			barsEndX: 0.5,
+			barsY: 0.4,
+			color: "#bdc3c7",
+			barsPow: 2,
+			barsHeight: 0.25,
+			barsMinHeight: 0.005,
+			glowness: 0.0,
+			
+			polar: 1.0,
+			mode: drawMode.outline,
+			clampShapeToZero: false,
+			closeShape: false
+		}).addSection({
+			minDecibels: -48,
+			maxDecibels: -20,
+			barCount: 128,
+			freqStart: 0,
+			freqEnd: 0.015,
+			barsWidth: 0.008,
+			barsStartX: -0.5,
+			barsEndX: 0.5,
+			barsY: 0.4,
+			color: "#ffffff",
+			barsPow: 3,
+			barsHeight: 0.25,
+			barsMinHeight: 0.005,
+			glowness: 0.0,
+			
+			polar: 1.0,
+			mode: drawMode.fill,
+			clampShapeToZero: false,
+			closeShape: false
+		}).addSection({
+			minDecibels: -48,
+			maxDecibels: -20,
+			barCount: 128,
+			freqStart: 0,
+			freqEnd: 0.015,
+			barsWidth: 0.008,
+			barsStartX: 1.5,
+			barsEndX: 0.5,
+			barsY: 0.4,
+			color: "#ffffff",
+			barsPow: 3,
+			barsHeight: 0.25,
+			barsMinHeight: 0.005,
+			glowness: 0.0,
+			
+			polar: 1.0,
+			mode: drawMode.fill,
+			clampShapeToZero: false,
+			closeShape: false
+		})
+};
 
-function loadPreset(presetName) {
-	var preset = settingsPresets[presetName];
-	
-	for(var x in settings) {
-		if(preset[x] !== undefined && preset[x] !== null && !Array.isArray(preset[x])) {
-			settings[x] = preset[x];
-		}
-	}
-	
-	settings.sections = [];
-	for(var i = 0; i < preset.sections.length; i++) {
-		var original = preset.sections[i];
-		var copy = {};
-		
-		for(var x in original) {
-			copy[x] = original[x];
-		}
-		
-		settings.sections.push(copy);
-	}
+var settings = new Settings();
+
+function loadPreset(name) {
+	// Creates the settings object if someone set it to null :D
+	if(!settings) settings = new Settings(settingsPresets[name]);
+	else settings.set(settingsPresets[name]);
 }
 
 // Debug
@@ -459,6 +415,10 @@ $(function() {
 				
 				gtx.beginPath();
 				for(var i = 0; i < section.barCount; i++) {
+					if(!section.drawLast && i === section.barCount - 1) {
+						break;
+					}
+					
 					var per = i / (section.barCount - 1);
 					
 					var p = getProps(cwidth, cheight, section, per);
@@ -499,6 +459,339 @@ $(function() {
 		gtx.restore();
 	}
 	
+	var refreshControls = (function(){
+		var glblSettings = $("#globalSettings")[0];
+		var secTabs = $("#settingsSectionTabs")[0];
+		var addTabLi = $("#addTab")[0];
+		var sectionSettingsUl = $("#sectionSettings")[0];
+		
+		var sectionControls = [];
+		
+		var refreshTabs = function() {
+			var thisIndex = -1;
+			
+			for(var i = 0; i < secTabs.children.length; i++) {
+				if(secTabs.children[i].classList.contains("activated")) {
+					thisIndex = i;
+					continue;
+				}
+			}
+			
+			while(sectionSettingsUl.children.length !== 0) {
+				sectionSettingsUl.removeChild(sectionSettingsUl.children[0]);
+			}
+			
+			while(secTabs.children.length !== 0 && secTabs.children[0] !== addTabLi) {
+				secTabs.removeChild(secTabs.children[0]);
+			}
+			
+			for(var i = 0; i < settings.sections.length; i++) {
+				actionAddTab(i);
+			}
+			
+			if(thisIndex !== -1) {
+				for(var i = 0; i < sectionControls[thisIndex].length; i++) {
+					sectionSettingsUl.appendChild(sectionControls[thisIndex][i]);
+				}
+				
+				secTabs.children[thisIndex].classList.add("activated");
+			}
+		};
+		
+		var createControl = function(s, x) {
+			var p = s[x];
+			
+			if(typeof p === 'object' || typeof p === 'function') {
+				return null;
+			}
+			
+			var li = $('<li>')[0];
+			var span = $('<span>')[0];
+			var input = $('<input>')[0];
+			
+			li.classList.add("settingsCtrl");
+			span.classList.add("ctrlName");
+			input.classList.add("ctrlInput");
+			
+			span.innerHTML = x;
+			
+			if(typeof p === 'boolean') {
+				input.type = 'checkbox';
+				
+				input.checked = p;
+			} else if(x.toLowerCase().endsWith('color')) { // Assume this is a color
+				input.type = 'color';
+				
+				input.value = p.toString();
+			} else {
+				input.type = 'text';
+				
+				input.placeholder = typeof p;
+				input.value = p.toString();
+			}
+			
+			input.addEventListener('change', function(){
+				if(typeof s[x] === 'number') {
+					var val = parseFloat(this.value);
+					
+					this.value = s[x] = (!val ? 0 : val);
+				} else if(typeof s[x] === 'boolean') {
+					s[x] = this.checked;
+				} else {
+					s[x] = this.value;
+				}
+			});
+			
+			li.appendChild(span);
+			li.appendChild(input);
+			
+			if(typeof p === 'boolean') {
+				var chkbx = $('<span>')[0];
+				chkbx.classList.add("ctrlCheckbox", "fa");
+				
+				chkbx.addEventListener('click', function(e) {
+					s[x] = input.checked = !input.checked;
+				});
+				
+				li.appendChild(chkbx);
+			}
+			
+			return li;
+		}
+		
+		var createControlCombo = function(s, x, vals) {
+			var p = s[x];
+			
+			if(typeof p === 'object' || typeof p === 'function') {
+				return null;
+			}
+			
+			var li = $('<li>')[0];
+			var span = $('<span>')[0];
+			var select = $('<select>')[0];
+			
+			li.classList.add("settingsCtrl");
+			span.classList.add("ctrlName");
+			select.classList.add("ctrlInput");
+			
+			span.innerHTML = x;
+			for(var h in vals) {
+				var opt = $('<option>')[0];
+				opt.value = h;
+				opt.innerHTML = h;
+				
+				select.appendChild(opt);
+				
+				if(s[x] === vals[h]) {
+					select.value = h;
+				}
+			}
+			
+			select.addEventListener('change', function(){
+				var val = vals[this.value];
+				s[x] = val;
+			});
+			
+			li.appendChild(span);
+			li.appendChild(select);
+			
+			return li;
+		}
+		
+		var createSectionNameControl = function(s, x) {
+			var p = s[x];
+			
+			var li = $('<li>')[0];
+			var input = $('<input>')[0];
+			var ul = $('<ul>')[0];
+			
+			li.classList.add("settingsMajorCtrl");
+			input.classList.add("ctrlMajorInput");
+			ul.classList.add("ctrlOptions");
+			
+			input.type = 'text';
+			input.placeholder = x;
+			input.value = p.toString();
+			
+			var cloneLi = $('<li>')[0];
+			var deleteLi = $('<li>')[0];
+			var moveLi = $('<li>')[0];
+			
+			cloneLi.classList.add("fa", "fa-clone", "w3-large", "ctrlOptClone");
+			deleteLi.classList.add("fa", "fa-trash-o", "w3-large", "ctrlOptDelete");
+			
+			var rightI = $('<i>')[0];
+			var leftI = $('<i>')[0];
+			
+			rightI.classList.add("fa", "fa-angle-right", "w3-small", "ctrlOptRight");
+			leftI.classList.add("fa", "fa-angle-left", "w3-small", "ctrlOptLeft");
+			
+			moveLi.classList.add("ctrlOptMoves");
+			
+			moveLi.appendChild(rightI);
+			moveLi.appendChild($('<br>')[0]);
+			moveLi.appendChild(leftI);
+			
+			rightI.addEventListener('click', function() {
+				var index = settings.sections.indexOf(s);
+				
+				if(index >= settings.sections.length - 1) {
+					return;
+				}
+				
+				var a = settings.sections[index];
+				settings.sections[index] = settings.sections[index + 1];
+				settings.sections[index + 1] = a;
+				
+				refreshTabs();
+			});
+			
+			leftI.addEventListener('click', function() {
+				var index = settings.sections.indexOf(s);
+				
+				if(index <= 0) {
+					return;
+				}
+				
+				var a = settings.sections[index];
+				settings.sections[index] = settings.sections[index - 1];
+				settings.sections[index - 1] = a;
+				
+				refreshTabs();
+			});
+			
+			cloneLi.addEventListener('click', function() {
+				var copy = new Section(s);
+				settings.sections.push(copy);
+				
+				actionAddTab(settings.sections.length - 1);
+			});
+			
+			deleteLi.addEventListener('click', function() {
+				var index = settings.sections.indexOf(s);
+				
+				settings.sections.splice(index, 1);
+				
+				actionRemoveTab(index);
+			});
+			
+			ul.appendChild(moveLi);
+			ul.appendChild(cloneLi);
+			ul.appendChild(deleteLi);
+			
+			input.addEventListener('change', function(){
+				s[x] = this.value;
+			});
+			
+			li.appendChild(input);
+			li.appendChild(ul);
+			
+			return li;
+		};
+		
+		var createSectionControls = function(s) {
+			var ctrls = [];
+			
+			for(var x in s) {
+				var ctrl = null;
+				
+				if(x === 'mode') {
+					ctrl = createControlCombo(s, x, drawMode);
+				} else if(x === 'name') {
+					// Special case for name
+					ctrl = createSectionNameControl(s, x);
+				} else {
+					ctrl = createControl(s, x);
+				}
+				
+				if(ctrl) ctrls.push(ctrl);
+			}
+			
+			return ctrls;
+		};
+		
+		var actionTabClicked = function(e) {
+			if(this.classList.contains('activated'))
+				return;
+			
+			var thisIndex = -1;
+			
+			for(var i = 0; i < settings.sections.length; i++) {
+				if(secTabs.children[i] === this) {
+					thisIndex = i;
+					continue;
+				}
+				
+				if(secTabs.children[i].classList.contains('activated'))
+					secTabs.children[i].classList.remove('activated');
+			}
+			
+			this.classList.add('activated');
+			
+			while(sectionSettingsUl.children.length !== 0) {
+				sectionSettingsUl.removeChild(sectionSettingsUl.children[0]);
+			}
+			
+			for(var i = 0; i < sectionControls[thisIndex].length; i++) {
+				sectionSettingsUl.appendChild(sectionControls[thisIndex][i]);
+			}
+		};
+		
+		var actionAddTab = function(i) {
+			var tabLi = $("<li>")[0];
+			tabLi.innerHTML = i.toString();
+			tabLi.addEventListener('click', actionTabClicked);
+			
+			secTabs.insertBefore(tabLi, addTabLi);
+			sectionControls[i] = createSectionControls(settings.sections[i]);
+		};
+		
+		var actionRemoveTab = function(i) {
+			var e = secTabs.children[i];
+			if(!e) return;
+			
+			e.removeEventListener('click', actionTabClicked);
+			
+			secTabs.removeChild(e);
+			
+			refreshTabs();
+		}
+		
+		addTabLi.addEventListener('click', function() {
+			var newSec = new Section();
+			settings.sections.push(newSec);
+			
+			actionAddTab(settings.sections.length - 1);
+		});
+		
+		return function() {
+			while(glblSettings.children.length !== 0) {
+				glblSettings.removeChild(glblSettings.children[0]);
+			}
+			while(secTabs.children.length !== 0 && secTabs.children[0] !== addTabLi) {
+				secTabs.removeChild(secTabs.children[0]);
+			}
+			
+			/*
+			<li class="settingsCtrl">
+				<span class="ctrlName">smoothingTimeConstant</span>
+				<input type="text" placeholder="number" class="ctrlInput" />
+			</li>
+			*/
+			for(var x in settings) {
+				var ctrl = createControl(settings, x);
+				
+				if(ctrl) glblSettings.appendChild(ctrl);
+			}
+			
+			for(var i = 0; i < settings.sections.length; i++) {
+				actionAddTab(i);
+			}
+			
+			actionTabClicked.call(secTabs.children[0]);
+		};
+	})();
+	
 	function init() {
 		if(!cvs || !gtx || !ctx) {
 			alert("Your browser isn't compatible"); 
@@ -525,7 +818,7 @@ $(function() {
 		}, false);
 		
 		audioElement.addEventListener('volumechange', function(e) {
-			gainNode.gain.value = 1.0 / audioElement.volume;
+			gainNode.gain.value = (audioElement.volume === 0 ? 0.0 : (1.0 / audioElement.volume));
 		});
 		
 		var setNav = $('#settingsNav')[0];
@@ -533,58 +826,14 @@ $(function() {
 			setNav.classList.contains('activated') ? setNav.classList.remove('activated') : setNav.classList.add('activated');
 		});
 		
-		/*
-		<li class="settingsCtrl">
-			<span class="ctrlName">smoothingTimeConstant</span>
-			<input type="text" placeholder="number" class="ctrlInput" />
-		</li>
-		*/
-		
-		var settingsCtrlsList = $("#settingsCtrlsList")[0];
-		for(var x in settings) {
-			if(typeof settings[x] === 'object') {
-				continue;
-			}
-		
-			var li = $('<li>')[0];
-			var span = $('<span>')[0];
-			var input = $('<input>')[0];
-			
-			li.classList.add("settingsCtrl");
-			span.classList.add("ctrlName");
-			input.classList.add("ctrlInput");
-			
-			span.innerHTML = x;
-			input.type = 'text';
-			input.placeholder = typeof settings[x];
-			input.value = settings[x].toString();
-		
-			input.addEventListener('change', (function() {
-				var k = x;
-				
-				if(typeof settings[k] === 'number') {
-					return function() {
-						this.value = settings[k] = parseFloat(this.value);
-					};
-				}
-				
-				return function() {
-					settings[k] = this.value;
-				};
-			})());
-			
-			li.appendChild(span);
-			li.appendChild(input);
-			
-			settingsCtrlsList.appendChild(li);
-		}
+		refreshControls();
 		
 		audioSource = ctx.createMediaElementSource(audioElement);
 		gainNode = ctx.createGain();
 		analyser = ctx.createAnalyser();
 		analyser.fftSize = 2048;
 		
-		gainNode.gain.value = 1.0 / audioElement.volume;
+		gainNode.gain.value = (audioElement.volume === 0 ? 0.0 : (1.0 / audioElement.volume));
 		
 		audioSource.connect(gainNode);
 		gainNode.connect(analyser);
@@ -601,7 +850,7 @@ $(function() {
 		+	"|  __  |  __|   \\   /   | |\n"
 		+	"| |  | | |____   | |    |_|\n"
 		+	"|_|  |_|______|  |_|    (_)\n\n"
-		+	"Hey you! I'm working on the interface of this app but it is already highly customizable through the JavaScript console! Have fun!");
+		+	"Hey you! This app is highly customizable through the JavaScript console too! Have fun!");
 		
 		loop();
 	}
