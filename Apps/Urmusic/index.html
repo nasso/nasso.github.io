@@ -12,29 +12,38 @@
 		<script type="text/javascript" src="index.js"></script>
 	</head>
 	<body>
+		<div style="display: none;">
+			<a id="downloader"></a>
+			<input type="file" id="fileChooser" />
+		</div>
+		
 		<canvas id="cvs"></canvas>
 		<audio id="audioElement" controls loop></audio>
 		
 		<nav id="settingsNav">
-			<div id="settingsHeader">
+			<header>
 				<div id="hambParent">
 					<div id="hamb" class="fa fa-bars w3-large"></div>
 				</div>
 				<h3>Settings</h3>
+				<span class="fa fa-angle-right w3-xlarge" id="presetMenuOpenCloseBtn"></span>
+			</header>
+			<div id="settingsPresetsMenu">
+				<div id="settingsPresetsMenuSizer">
+					<header>
+						<input type="text" placeholder="preset name" id="presetNameInput" />
+						<ul id="settingsPresetsOptions">
+							<li id="settingsPresetsOptOpen" class="fa fa-folder-open-o w3-xlarge"></li>
+							<li id="settingsPresetsOptSave" class="fa fa-floppy-o w3-xlarge"></li>
+						</ul>
+					</header>
+					<ul id="settingsPresetsList">
+					</ul>
+				</div>
 			</div>
 			<div id="settingsCtrlsContainer">
 				<div>
 					<ul id="globalSettings" class="settingsCtrlsList">
-						<!--
-						<li class="settingsCtrl">
-							<span class="ctrlName">mode</span>
-							<select class="ctrlInput">
-								<option value="lines">Lines</option>
-								<option value="outline">Outline</option>
-								<option value="fill">Fill</option>
-							</select>
-						</li>
-						-->
 					</ul>
 					<ul id="settingsSectionTabs">
 						<li id="addTab" class="fa fa-plus w3-medium"></li>

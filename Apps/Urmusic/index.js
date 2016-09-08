@@ -15,11 +15,11 @@ function Section(p) {
 	this.barCount = p.barCount !== undefined ? p.barCount : 32;
 	this.freqStart = p.freqStart !== undefined ? p.freqStart : 0;
 	this.freqEnd = p.freqEnd !== undefined ? p.freqEnd : 0.03;
-	this.barsWidth = p.barsWidth !== undefined ? p.barsWidth : 0.060;
+	this.barsWidth = p.barsWidth !== undefined ? p.barsWidth : 6.0;
 	this.barsStartX = p.barsStartX !== undefined ? p.barsStartX : -1;
 	this.barsEndX = p.barsEndX !== undefined ? p.barsEndX : 1;
 	this.barsY = p.barsY !== undefined ? p.barsY : -0.5;
-	this.color = p.color !== undefined ? p.color : 'white';
+	this.color = p.color !== undefined ? p.color : '#ffffff';
 	this.barsPow = p.barsPow !== undefined ? p.barsPow : 2;
 	this.barsHeight = p.barsHeight !== undefined ? p.barsHeight : 0.7;
 	this.barsMinHeight = p.barsMinHeight !== undefined ? p.barsMinHeight : 0.01;
@@ -73,11 +73,11 @@ var settingsPresets = {
 			barCount: 128,
 			freqStart: 0,
 			freqEnd: 0.015,
-			barsWidth: 0.008,
+			barsWidth: 0.8,
 			barsStartX: -0.5,
 			barsEndX: 0.5,
 			barsY: 0.4,
-			color: 'white',
+			color: '#ffffff',
 			barsPow: 3,
 			barsHeight: 0.25,
 			barsMinHeight: 0.005,
@@ -93,11 +93,11 @@ var settingsPresets = {
 			barCount: 128,
 			freqStart: 0,
 			freqEnd: 0.015,
-			barsWidth: 0.008,
+			barsWidth: 0.8,
 			barsStartX: 1.5,
 			barsEndX: 0.5,
 			barsY: 0.4,
-			color: 'white',
+			color: '#ffffff',
 			barsPow: 3,
 			barsHeight: 0.25,
 			barsMinHeight: 0.005,
@@ -120,7 +120,7 @@ var settingsPresets = {
 			barCount: 128,
 			freqStart: 0.015,
 			freqEnd: 0.030,
-			barsWidth: 0.008,
+			barsWidth: 0.8,
 			barsStartX: -0.5,
 			barsEndX: 0.5,
 			barsY: 0.4,
@@ -140,7 +140,7 @@ var settingsPresets = {
 			barCount: 128,
 			freqStart: 0.015,
 			freqEnd: 0.030,
-			barsWidth: 0.008,
+			barsWidth: 0.8,
 			barsStartX: 1.5,
 			barsEndX: 0.5,
 			barsY: 0.4,
@@ -160,7 +160,7 @@ var settingsPresets = {
 			barCount: 128,
 			freqStart: 0,
 			freqEnd: 0.015,
-			barsWidth: 0.008,
+			barsWidth: 0.8,
 			barsStartX: -0.5,
 			barsEndX: 0.5,
 			barsY: 0.4,
@@ -180,7 +180,7 @@ var settingsPresets = {
 			barCount: 128,
 			freqStart: 0,
 			freqEnd: 0.015,
-			barsWidth: 0.008,
+			barsWidth: 0.8,
 			barsStartX: 1.5,
 			barsEndX: 0.5,
 			barsY: 0.4,
@@ -409,7 +409,7 @@ $(function() {
 				
 				gtx.strokeStyle = section.color;
 				gtx.fillStyle = section.color;
-				gtx.lineWidth = section.barsWidth * Math.min(cvs.width, cvs.height);
+				gtx.lineWidth = (section.barsWidth / 100) * Math.min(cvs.width, cvs.height);
 				gtx.shadowColor = section.color;
 				gtx.shadowBlur = section.glowness;
 				
@@ -464,6 +464,13 @@ $(function() {
 		var secTabs = $("#settingsSectionTabs")[0];
 		var addTabLi = $("#addTab")[0];
 		var sectionSettingsUl = $("#sectionSettings")[0];
+		var presetList = $("#settingsPresetsList")[0];
+		var presetNameIn = $("#presetNameInput")[0];
+		var loadPresetBtn = $("#settingsPresetsOptOpen")[0];
+		var savePresetBtn = $("#settingsPresetsOptSave")[0];
+		
+		var downloader = $('#downloader')[0];
+		var fileChooser = $('#fileChooser')[0];
 		
 		var sectionControls = [];
 		
@@ -644,6 +651,8 @@ $(function() {
 				settings.sections[index + 1] = a;
 				
 				refreshTabs();
+				
+				secTabs.children[index + 1].click();
 			});
 			
 			leftI.addEventListener('click', function() {
@@ -658,6 +667,8 @@ $(function() {
 				settings.sections[index - 1] = a;
 				
 				refreshTabs();
+				
+				secTabs.children[index - 1].click();
 			});
 			
 			cloneLi.addEventListener('click', function() {
@@ -757,6 +768,40 @@ $(function() {
 			refreshTabs();
 		}
 		
+		var refreshSettings = function() {
+			while(glblSettings.children.length !== 0) {
+				glblSettings.removeChild(glblSettings.children[0]);
+			}
+			
+			for(var x in settings) {
+				var ctrl = createControl(settings, x);
+				
+				if(ctrl) glblSettings.appendChild(ctrl);
+			}
+		};
+		
+		var refreshPresetList = function() {
+			while(presetList.children.length !== 0) {
+				presetList.removeChild(presetList.children[0]);
+			}
+			
+			for(var x in settingsPresets) {
+				var preset = $('<li>')[0];
+				preset.innerHTML = x.toString(); // SHOULD be a string
+				
+				preset.addEventListener('click', (function() {
+					var presetName = x;
+					
+					return function() {
+						loadPreset(presetName);
+						refreshTabs();
+					};
+				})());
+				
+				presetList.appendChild(preset);
+			}
+		};
+		
 		addTabLi.addEventListener('click', function() {
 			var newSec = new Section();
 			settings.sections.push(newSec);
@@ -764,29 +809,55 @@ $(function() {
 			actionAddTab(settings.sections.length - 1);
 		});
 		
-		return function() {
-			while(glblSettings.children.length !== 0) {
-				glblSettings.removeChild(glblSettings.children[0]);
-			}
-			while(secTabs.children.length !== 0 && secTabs.children[0] !== addTabLi) {
-				secTabs.removeChild(secTabs.children[0]);
-			}
+		fileChooser.addEventListener('change', function(e) {
+			var f = e.target.files[0];
+			if(!f) return;
 			
-			/*
-			<li class="settingsCtrl">
-				<span class="ctrlName">smoothingTimeConstant</span>
-				<input type="text" placeholder="number" class="ctrlInput" />
-			</li>
-			*/
-			for(var x in settings) {
-				var ctrl = createControl(settings, x);
+			var fileName = f.name.substr(0, f.name.lastIndexOf('.'));
+			var reader = new FileReader();
+			reader.onload = function(e) {
+				var newSets = new Settings(JSON.parse(e.target.result));
+				console.log(f.name);
+				var newPresetName = fileName;
 				
-				if(ctrl) glblSettings.appendChild(ctrl);
-			}
+				var counter = 0;
+				while(settingsPresets[newPresetName] !== undefined) {
+					newPresetName = fileName + ' (' + counter + ')';
+					counter++;
+				}
+				
+				settingsPresets[newPresetName] = newSets;
+				
+				loadPreset(newPresetName);
+				
+				refreshSettings();
+				refreshTabs();
+				refreshPresetList();
+			};
 			
-			for(var i = 0; i < settings.sections.length; i++) {
-				actionAddTab(i);
-			}
+			reader.readAsText(f);
+		});
+		
+		loadPresetBtn.addEventListener('click', function() {
+			// Ask for .urm file
+			fileChooser.accept = ".urm";
+			fileChooser.click();
+		});
+		
+		savePresetBtn.addEventListener('click', function() {
+			// Download .urm
+			downloader.href = "data:text/plain;base64," + btoa(JSON.stringify(settings));
+			downloader.download = (presetNameIn.value ? presetNameIn.value : "untitled") + ".urm";
+			downloader.click();
+			
+			refreshSettings();
+			refreshTabs();
+		});
+		
+		return function() {
+			refreshSettings();
+			refreshTabs();
+			refreshPresetList();
 			
 			actionTabClicked.call(secTabs.children[0]);
 		};
@@ -820,10 +891,29 @@ $(function() {
 		audioElement.addEventListener('volumechange', function(e) {
 			gainNode.gain.value = (audioElement.volume === 0 ? 0.0 : (1.0 / audioElement.volume));
 		});
+		audioElement.crossOrigin = "anonymous";
 		
 		var setNav = $('#settingsNav')[0];
+		var presetMenuOpenCloseBtn = $('#presetMenuOpenCloseBtn')[0];
+		var presetMenu = $('#settingsPresetsMenu')[0];
+		
 		$('#hambParent').on('click', function(e) {
 			setNav.classList.contains('activated') ? setNav.classList.remove('activated') : setNav.classList.add('activated');
+			
+			if(!setNav.classList.contains('activated')) {
+				presetMenu.classList.remove('opened');
+				presetMenuOpenCloseBtn.classList.remove('opened');
+			}
+		});
+		
+		presetMenuOpenCloseBtn.addEventListener('click', function() {
+			if(this.classList.contains('opened')) {
+				this.classList.remove('opened');
+				presetMenu.classList.remove('opened');
+			} else {
+				this.classList.add('opened');
+				presetMenu.classList.add('opened');
+			}
 		});
 		
 		refreshControls();
@@ -845,12 +935,11 @@ $(function() {
 		
 		console.log(
 			" _    _ ________     __  _ \n"
-		+	"| |  | |  ____\\ \\   / / | |\n"
-		+	"| |__| | |__   \\ \\_/ /  | |\n"
-		+	"|  __  |  __|   \\   /   | |\n"
-		+	"| |  | | |____   | |    |_|\n"
-		+	"|_|  |_|______|  |_|    (_)\n\n"
-		+	"Hey you! This app is highly customizable through the JavaScript console too! Have fun!");
+		+	"| |  | |  ____\\ \\   / / | |\t" +	"Hey you! This app is highly customizable\n"
+		+	"| |__| | |__   \\ \\_/ /  | |\t" +	"through the JavaScript console too! Have fun!\n"
+		+	"|  __  |  __|   \\   /   | |\t" +	"\n"
+		+	"| |  | | |____   | |    |_|\t" +	"Urmusic V0.9\n"
+		+	"|_|  |_|______|  |_|    (_)\t" +	"By Nasso (http://nasso.github.io/)\n\n");
 		
 		loop();
 	}
