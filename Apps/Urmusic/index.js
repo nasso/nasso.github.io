@@ -26,9 +26,11 @@ function Section(p) {
 	this.glowness = p.glowness !== undefined ? p.glowness : 0.0;
 	this.polar = p.polar !== undefined ? p.polar : 0.0;
 	this.mode = p.mode !== undefined ? p.mode : drawMode.lines;
+	this.visible = p.visible !== undefined ? p.visible : true;
 	this.clampShapeToZero = p.clampShapeToZero !== undefined ? p.clampShapeToZero : true;
 	this.closeShape = p.closeShape !== undefined ? p.closeShape : true;
 	this.drawLast = p.drawLast !== undefined ? p.drawLast : true;
+	this.quadratic = p.quadratic !== undefined ? p.quadratic : true;
 }
 
 function Settings(p) {
@@ -61,53 +63,7 @@ Settings.prototype.set = function(p) {
 
 var settingsPresets = {
 	'Default': new Settings().addSection(),
-	'Image disk': new Settings({
-			smoothingTimeConstant: 0.65,
-			imageX: 0,
-			imageY: 0,
-			imageWidth: 0.8,
-			imageHeight: 0.8
-		}).addSection({
-			minDecibels: -48,
-			maxDecibels: -20,
-			barCount: 128,
-			freqStart: 0,
-			freqEnd: 0.015,
-			barsWidth: 0.8,
-			barsStartX: -0.5,
-			barsEndX: 0.5,
-			barsY: 0.4,
-			color: '#ffffff',
-			barsPow: 3,
-			barsHeight: 0.25,
-			barsMinHeight: 0.005,
-			glowness: 0.0,
-			
-			polar: 1.0,
-			mode: drawMode.fill,
-			clampShapeToZero: false,
-			closeShape: false
-		}).addSection({
-			minDecibels: -48,
-			maxDecibels: -20,
-			barCount: 128,
-			freqStart: 0,
-			freqEnd: 0.015,
-			barsWidth: 0.8,
-			barsStartX: 1.5,
-			barsEndX: 0.5,
-			barsY: 0.4,
-			color: '#ffffff',
-			barsPow: 3,
-			barsHeight: 0.25,
-			barsMinHeight: 0.005,
-			glowness: 0.0,
-			
-			polar: 1.0,
-			mode: drawMode.fill,
-			clampShapeToZero: false,
-			closeShape: false
-		}), 
+	'DubstepGutter': new Settings(JSON.parse('{"smoothingTimeConstant":0.4,"sections":[{"name":"Bass top","minDecibels":-70,"maxDecibels":-30,"barCount":128,"freqStart":-0.001,"freqEnd":0.014,"barsWidth":1,"barsStartX":-0.55,"barsEndX":0.05,"barsY":0.2,"color":"#ffffff","barsPow":3,"barsHeight":0.1,"barsMinHeight":0.01,"glowness":0,"polar":1,"mode":0,"visible":true,"clampShapeToZero":true,"closeShape":true,"drawLast":true,"quadratic":true},{"name":"Bass bottom","minDecibels":-70,"maxDecibels":-30,"barCount":128,"freqStart":-0.001,"freqEnd":0.014,"barsWidth":1,"barsStartX":0.6,"barsEndX":0.06,"barsY":0.2,"color":"#ffffff","barsPow":3,"barsHeight":0.1,"barsMinHeight":0.01,"glowness":0,"polar":1,"mode":0,"visible":true,"clampShapeToZero":true,"closeShape":true,"drawLast":true,"quadratic":true},{"name":"High top","minDecibels":-70,"maxDecibels":-30,"barCount":128,"freqStart":0.015,"freqEnd":0.03,"barsWidth":1,"barsStartX":-0.55,"barsEndX":-0.95,"barsY":0.2,"color":"#ffffff","barsPow":3,"barsHeight":0.05,"barsMinHeight":0.01,"glowness":0,"polar":1,"mode":0,"visible":true,"clampShapeToZero":true,"closeShape":true,"drawLast":true,"quadratic":true},{"name":"High bottom","minDecibels":-70,"maxDecibels":-30,"barCount":128,"freqStart":0.015,"freqEnd":0.03,"barsWidth":1,"barsStartX":-1.4,"barsEndX":-0.95,"barsY":0.2,"color":"#ffffff","barsPow":3,"barsHeight":0.05,"barsMinHeight":0.01,"glowness":0,"polar":1,"mode":0,"visible":true,"clampShapeToZero":true,"closeShape":true,"drawLast":true,"quadratic":true}],"imageX":0,"imageY":0,"imageWidth":0.42,"imageHeight":0.42,"backgroundColor":"#3b3b3b"}')), 
 	'Rebellion': new Settings({
 			smoothingTimeConstant: 0.5,
 			imageX: 0,
@@ -225,10 +181,38 @@ $(function() {
 	var analyser;
 	var freqData;
 	
+	var hoverSection = null;
+	
 	var imgReady = false;
 	
 	var img = new Image();
 	var audioElement = $("#audioElement")[0];
+	
+	function actionLoadFilePreset(f) {
+		if(!f) return;
+		
+		var fileName = f.name.substr(0, f.name.lastIndexOf('.'));
+		var reader = new FileReader();
+		reader.onload = function(e) {
+			var newSets = new Settings(JSON.parse(e.target.result));
+			
+			var newPresetName = fileName;
+			
+			var counter = 0;
+			while(settingsPresets[newPresetName] !== undefined) {
+				newPresetName = fileName + ' (' + counter + ')';
+				counter++;
+			}
+			
+			settingsPresets[newPresetName] = newSets;
+			
+			loadPreset(newPresetName);
+			
+			refreshControls();
+		};
+		
+		reader.readAsText(f);
+	}
 	
 	function processImageFile(imageFile) {
 		if(!imageFile.type.match('image.*')) {
@@ -262,12 +246,15 @@ $(function() {
 	function processFiles(files) {
 		var imageFile;
 		var soundFile;
+		var presetFile;
 		
 		for(var i = 0; i < files.length; i++) {
 			if(files[i].type.match('image.*')) {
 				imageFile = files[i];
-			}else if(files[i].type.match('audio.*')) {
+			} else if(files[i].type.match('audio.*')) {
 				soundFile = files[i];
+			} else if(files[i].name.endsWith('.urm')) {
+				presetFile = files[i];
 			}
 		}
 		
@@ -277,40 +264,58 @@ $(function() {
 		if(soundFile) {
 			processAudioFile(soundFile);
 		}
+		if(presetFile) {
+			actionLoadFilePreset(presetFile);
+		}
 	}
 	
 	function lerp(a, b, x) {
 		return a + x * (b - a);
 	}
 	
-	function getValue(array, index) {
-		if(index < 0) {
-			return array[0];
-		} else if(index >= array.length - 1) {
-			return array[array.length - 1];
-		}
-		
-		var flr = Math.floor(index);
-		var cel = Math.ceil(index);
-		var rdn = Math.floor(index + 0.5);
-		
-		var flrv = array[flr];
-		var celv = array[cel];
-		
-		// Quadratic interpolation
-		if(index < 1.5) {
-			return quadCurve(array[0], array[1], lerp(array[1], array[2], 0.5), index / 1.5);
-		} else if(index > array.length - 2.5) {
-			var a = lerp(array[array.length - 3], array[array.length - 2], 0.5);
-			
-			return quadCurve(a, array[array.length - 2], array[array.length - 1], (index - array.length + 2.5) / 1.5);
+	function addressArray(array, i, outValue) {
+		if(i < 0 || i >= array.length) {
+			return outValue;
 		} else {
-			return quadCurve(lerp(array[rdn - 1], array[rdn], 0.5), array[rdn], lerp(array[rdn], array[rdn + 1], 0.5), index - rdn + 0.5);
+			return array[i];
+		}
+	}
+	
+	function getValue(array, index, quadInterpolation, minValue) {
+		// Quadratic interpolation
+		if(quadInterpolation) {
+			var rdn = Math.floor(index + 0.5);
+			
+			return quadCurve(
+				lerp(
+					addressArray(array, rdn - 1, minValue),
+					addressArray(array, rdn, minValue),
+					0.5),
+				addressArray(array, rdn, minValue),
+				lerp(addressArray(array, rdn, minValue),
+					addressArray(array, rdn + 1, minValue),
+					0.5),
+				
+				index - rdn + 0.5);
+		} else {
+			var flr = Math.floor(index);
+			var cel = Math.ceil(index);
+			
+			var flrv = addressArray(array, flr, minValue);
+			var celv = addressArray(array, cel, minValue);
+			
+			return lerp(flrv, celv, index - flr);
 		}
 	}
 	
 	function freqValue(nind, section) {
-		return Math.max(getValue(freqData, lerp(section.freqStart, section.freqEnd, nind) * freqData.length) - section.minDecibels, 0) / (section.maxDecibels - section.minDecibels);
+		return Math.max(
+			getValue(
+				freqData,
+				lerp(section.freqStart, section.freqEnd, nind) * freqData.length,
+				section.quadratic,
+				section.minDecibels) - section.minDecibels,
+				0) / (section.maxDecibels - section.minDecibels);
 	}
 	
 	function quadCurve(p0y, cpy, p1y, t) {
@@ -407,6 +412,10 @@ $(function() {
 				var section = settings.sections[is];
 				var mode = section.mode;
 				
+				if(!section.visible) {
+					continue;
+				}
+				
 				gtx.strokeStyle = section.color;
 				gtx.fillStyle = section.color;
 				gtx.lineWidth = (section.barsWidth / 100) * Math.min(cvs.width, cvs.height);
@@ -440,8 +449,22 @@ $(function() {
 				
 				if(mode == drawMode.fill) {
 					gtx.fill();
+					
+					if(hoverSection === section) {
+						gtx.fillStyle = "red";
+						gtx.globalAlpha = 0.2;
+						gtx.fill();
+						gtx.globalAlpha = 1.0;
+					}
 				} else {
 					gtx.stroke();
+					
+					if(hoverSection === section) {
+						gtx.strokeStyle = "red";
+						gtx.globalAlpha = 0.2;
+						gtx.stroke();
+						gtx.globalAlpha = 1.0;
+					}
 				}
 			}
 			
@@ -748,10 +771,29 @@ $(function() {
 			}
 		};
 		
+		var actionTabOver = function(e) {
+			var index = -1;
+			var child = this;
+			while((child = child.previousSibling) != null)  index++;
+			
+			hoverSection = settings.sections[index];
+		};
+		
+		var actionTabOut = function(e) {
+			var pointerElem = document.elementFromPoint(e.clientX, e.clientY);
+			
+			if(!pointerElem || !pointerElem.classList.contains('sectionTab')) {
+				hoverSection = null;
+			}
+		};
+		
 		var actionAddTab = function(i) {
 			var tabLi = $("<li>")[0];
 			tabLi.innerHTML = i.toString();
+			tabLi.classList.add('sectionTab');
 			tabLi.addEventListener('click', actionTabClicked);
+			tabLi.addEventListener('mouseover', actionTabOver);
+			tabLi.addEventListener('mouseout', actionTabOut);
 			
 			secTabs.insertBefore(tabLi, addTabLi);
 			sectionControls[i] = createSectionControls(settings.sections[i]);
@@ -762,6 +804,8 @@ $(function() {
 			if(!e) return;
 			
 			e.removeEventListener('click', actionTabClicked);
+			e.removeEventListener('mouseover', actionTabOver);
+			e.removeEventListener('mouseout', actionTabOut);
 			
 			secTabs.removeChild(e);
 			
@@ -810,32 +854,7 @@ $(function() {
 		});
 		
 		fileChooser.addEventListener('change', function(e) {
-			var f = e.target.files[0];
-			if(!f) return;
-			
-			var fileName = f.name.substr(0, f.name.lastIndexOf('.'));
-			var reader = new FileReader();
-			reader.onload = function(e) {
-				var newSets = new Settings(JSON.parse(e.target.result));
-				console.log(f.name);
-				var newPresetName = fileName;
-				
-				var counter = 0;
-				while(settingsPresets[newPresetName] !== undefined) {
-					newPresetName = fileName + ' (' + counter + ')';
-					counter++;
-				}
-				
-				settingsPresets[newPresetName] = newSets;
-				
-				loadPreset(newPresetName);
-				
-				refreshSettings();
-				refreshTabs();
-				refreshPresetList();
-			};
-			
-			reader.readAsText(f);
+			actionLoadFilePreset(e.target.files[0]);
 		});
 		
 		loadPresetBtn.addEventListener('click', function() {
