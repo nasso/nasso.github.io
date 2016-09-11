@@ -1,5 +1,9 @@
 // TAB_SIZE = 4
 
+// Utils
+function isNullOrUndef(v) { return (v === null || v === undefined); }
+
+// The actual app
 var AudioContext = window.AudioContext || window.webkitAudioContext;
 
 var drawMode = {
@@ -7,32 +11,101 @@ var drawMode = {
 	fill: 1,
 	outline: 2
 };
+var refreshables = {
+	SETTINGS_BIT: 1,
+	TABS_BIT: 2,
+	PRESETLIST_BIT: 4
+};
+
+var exprArgs = [
+	'rand',
+	'max',
+	'min',
+	'cos',
+	'sin',
+	'tan',
+	'acos',
+	'asin',
+	'atan',
+	'pow',
+	'pi',
+	'maxval',
+	'minval'
+];
+
+function numberProperty(v) {
+	if(!v) v = 0;
+	
+	if(typeof v === 'object' && v.hasOwnProperty('expr')) {
+		v = v.expr;
+	}
+	
+	var expr = v.toString();
+	var gtr = new Function(exprArgs.join(','), 'return (' + expr + ')');
+	
+	var p = {};
+	p.toJSON = function() {
+		return expr;
+	};
+	
+	Object.defineProperty(p, 'value', {
+		get: function() {
+			return gtr(
+				Math.random,
+				Math.max,
+				Math.min,
+				Math.cos,
+				Math.sin,
+				Math.tan,
+				Math.acos,
+				Math.asin,
+				Math.atan,
+				Math.pow,
+				Math.PI,
+				frameProps.maxval,
+				frameProps.minval);
+		}
+	});
+	
+	Object.defineProperty(p, 'expr', {
+		get: function() {
+			return expr;
+		},
+		
+		set: function(val) {
+			expr = val;
+			gtr = new Function(exprArgs.join(','), 'return (' + expr + ')');
+		}
+	});
+	
+	return p;
+}
 
 function Section(p) {
 	p = p || {};
 	
-	this.name = p.name !== undefined ? p.name : 'A section';
-	this.visible = p.visible !== undefined ? p.visible : true;
-	this.minDecibels = p.minDecibels !== undefined ? p.minDecibels : -100;
-	this.maxDecibels = p.maxDecibels !== undefined ? p.maxDecibels : -20;
-	this.barCount = p.barCount !== undefined ? p.barCount : 32;
-	this.freqStart = p.freqStart !== undefined ? p.freqStart : 0;
-	this.freqEnd = p.freqEnd !== undefined ? p.freqEnd : 0.03;
-	this.barsWidth = p.barsWidth !== undefined ? p.barsWidth : 6.0;
-	this.barsStartX = p.barsStartX !== undefined ? p.barsStartX : -1;
-	this.barsEndX = p.barsEndX !== undefined ? p.barsEndX : 1;
-	this.barsY = p.barsY !== undefined ? p.barsY : -0.5;
-	this.color = p.color !== undefined ? p.color : '#ffffff';
-	this.barsPow = p.barsPow !== undefined ? p.barsPow : 2;
-	this.barsHeight = p.barsHeight !== undefined ? p.barsHeight : 0.7;
-	this.barsMinHeight = p.barsMinHeight !== undefined ? p.barsMinHeight : 0.01;
-	this.glowness = p.glowness !== undefined ? p.glowness : 0.0;
-	this.polar = p.polar !== undefined ? p.polar : 0.0;
-	this.mode = p.mode !== undefined ? p.mode : drawMode.lines;
-	this.clampShapeToZero = p.clampShapeToZero !== undefined ? p.clampShapeToZero : true;
-	this.closeShape = p.closeShape !== undefined ? p.closeShape : true;
-	this.drawLast = p.drawLast !== undefined ? p.drawLast : true;
-	this.quadratic = p.quadratic !== undefined ? p.quadratic : true;
+	this.name = !isNullOrUndef(p.name) ? p.name : 'A section';
+	this.visible = !isNullOrUndef(p.visible) ? p.visible : true;
+	this.minDecibels = numberProperty(!isNullOrUndef(p.minDecibels) ? p.minDecibels : -100);
+	this.maxDecibels = numberProperty(!isNullOrUndef(p.maxDecibels) ? p.maxDecibels : -20);
+	this.barCount = numberProperty(!isNullOrUndef(p.barCount) ? p.barCount : 32);
+	this.freqStart = numberProperty(!isNullOrUndef(p.freqStart) ? p.freqStart : 0);
+	this.freqEnd = numberProperty(!isNullOrUndef(p.freqEnd) ? p.freqEnd : 0.03);
+	this.barsWidth = numberProperty(!isNullOrUndef(p.barsWidth) ? p.barsWidth : 6.0);
+	this.barsStartX = numberProperty(!isNullOrUndef(p.barsStartX) ? p.barsStartX : -1);
+	this.barsEndX = numberProperty(!isNullOrUndef(p.barsEndX) ? p.barsEndX : 1);
+	this.barsY = numberProperty(!isNullOrUndef(p.barsY) ? p.barsY : -0.5);
+	this.color = !isNullOrUndef(p.color) ? p.color : '#ffffff';
+	this.barsPow = numberProperty(!isNullOrUndef(p.barsPow) ? p.barsPow : 2);
+	this.barsHeight = numberProperty(!isNullOrUndef(p.barsHeight) ? p.barsHeight : 0.7);
+	this.barsMinHeight = numberProperty(!isNullOrUndef(p.barsMinHeight) ? p.barsMinHeight : 0.01);
+	this.glowness = numberProperty(!isNullOrUndef(p.glowness) ? p.glowness : 0.0);
+	this.polar = numberProperty(!isNullOrUndef(p.polar) ? p.polar : 0.0);
+	this.mode = !isNullOrUndef(p.mode) ? p.mode : drawMode.lines;
+	this.clampShapeToZero = !isNullOrUndef(p.clampShapeToZero) ? p.clampShapeToZero : true;
+	this.closeShape = !isNullOrUndef(p.closeShape) ? p.closeShape : true;
+	this.drawLast = !isNullOrUndef(p.drawLast) ? p.drawLast : true;
+	this.quadratic = !isNullOrUndef(p.quadratic) ? p.quadratic : true;
 }
 
 function Settings(p) {
@@ -46,7 +119,7 @@ Settings.prototype.addSection = function(p) {
 Settings.prototype.set = function(p) {
 	p = p || {};
 	
-	this.smoothingTimeConstant = p.smoothingTimeConstant !== undefined ? p.smoothingTimeConstant : 0.65;
+	this.smoothingTimeConstant = numberProperty(!isNullOrUndef(p.smoothingTimeConstant) ? p.smoothingTimeConstant : 0.65);
 	
 	this.sections = [];
 	if(Array.isArray(p.sections)) {
@@ -55,17 +128,23 @@ Settings.prototype.set = function(p) {
 		}
 	}
 	
-	this.imageX = p.imageX !== undefined ? p.imageX : 0;
-	this.imageY = p.imageY !== undefined ? p.imageY : 0;
-	this.imageWidth = p.imageWidth !== undefined ? p.imageWidth : 0.4;
-	this.imageHeight = p.imageHeight !== undefined ? p.imageHeight : 0.4;
+	this.globalScale = numberProperty(!isNullOrUndef(p.globalScale) ? p.globalScale : 1.0);
+	this.globalOffsetX = numberProperty(!isNullOrUndef(p.globalOffsetX) ? p.globalOffsetX : 0.0);
+	this.globalOffsetY = numberProperty(!isNullOrUndef(p.globalOffsetY) ? p.globalOffsetY : 0.0);
+	this.globalRotation = numberProperty(!isNullOrUndef(p.globalRotation) ? p.globalRotation : 0.0);
 	
-	this.backgroundColor = p.backgroundColor !== undefined ? p.backgroundColor : '#2A2C31';
+	this.imageURL = !isNullOrUndef(p.imageURL) ? p.imageURL : '';
+	this.imageX = numberProperty(!isNullOrUndef(p.imageX) ? p.imageX : 0);
+	this.imageY = numberProperty(!isNullOrUndef(p.imageY) ? p.imageY : 0);
+	this.imageWidth = numberProperty(!isNullOrUndef(p.imageWidth) ? p.imageWidth : 0.4);
+	this.imageHeight = numberProperty(!isNullOrUndef(p.imageHeight) ? p.imageHeight : 0.4);
+	
+	this.backgroundColor = !isNullOrUndef(p.backgroundColor) ? p.backgroundColor : '#3b3b3b';
 };
 
 var settingsPresets = {
 	'Default': new Settings().addSection(),
-	'DubstepGutter': new Settings(JSON.parse('{"smoothingTimeConstant":0.4,"sections":[{"name":"Bass top","visible":true,"minDecibels":-70,"maxDecibels":-30,"barCount":128,"freqStart":-0.001,"freqEnd":0.014,"barsWidth":1,"barsStartX":-0.55,"barsEndX":0.1,"barsY":0.2,"color":"#ffffff","barsPow":3,"barsHeight":0.1,"barsMinHeight":0.01,"glowness":0,"polar":1,"mode":0,"clampShapeToZero":true,"closeShape":true,"drawLast":true,"quadratic":true},{"name":"Bass bottom","visible":true,"minDecibels":-70,"maxDecibels":-30,"barCount":128,"freqStart":-0.001,"freqEnd":0.014,"barsWidth":1,"barsStartX":0.65,"barsEndX":0.1,"barsY":0.2,"color":"#ffffff","barsPow":3,"barsHeight":0.1,"barsMinHeight":0.01,"glowness":0,"polar":1,"mode":0,"clampShapeToZero":true,"closeShape":true,"drawLast":false,"quadratic":true},{"name":"High top","visible":true,"minDecibels":-70,"maxDecibels":-30,"barCount":128,"freqStart":0.015,"freqEnd":0.03,"barsWidth":1,"barsStartX":1.45,"barsEndX":1.05,"barsY":0.2,"color":"#ffffff","barsPow":3,"barsHeight":0.05,"barsMinHeight":0.01,"glowness":0,"polar":1,"mode":0,"clampShapeToZero":true,"closeShape":true,"drawLast":true,"quadratic":true},{"name":"High bottom","visible":true,"minDecibels":-70,"maxDecibels":-30,"barCount":128,"freqStart":0.015,"freqEnd":0.03,"barsWidth":1,"barsStartX":0.65,"barsEndX":1.05,"barsY":0.2,"color":"#ffffff","barsPow":3,"barsHeight":0.05,"barsMinHeight":0.01,"glowness":0,"polar":1,"mode":0,"clampShapeToZero":true,"closeShape":true,"drawLast":true,"quadratic":true}],"imageX":0,"imageY":0,"imageWidth":0.41,"imageHeight":0.41,"backgroundColor":"#3b3b3b"}')), 
+	'DubstepGutter': new Settings(JSON.parse('{"smoothingTimeConstant":"0.5","sections":[{"name":"Bass top","visible":true,"minDecibels":"-70","maxDecibels":"-30","barCount":"128","freqStart":"-0.001","freqEnd":"0.014","barsWidth":"1","barsStartX":"-0.55","barsEndX":"0.1","barsY":"0.2","color":"#ffffff","barsPow":"4","barsHeight":"0.05","barsMinHeight":"0.01","glowness":"4","polar":"1","mode":0,"clampShapeToZero":true,"closeShape":true,"drawLast":true,"quadratic":true},{"name":"Bass bottom","visible":true,"minDecibels":"-70","maxDecibels":"-30","barCount":"128","freqStart":"-0.001","freqEnd":"0.014","barsWidth":"1","barsStartX":"0.65","barsEndX":"0.1","barsY":"0.2","color":"#ffffff","barsPow":"4","barsHeight":"0.05","barsMinHeight":"0.01","glowness":"4","polar":"1","mode":0,"clampShapeToZero":true,"closeShape":true,"drawLast":false,"quadratic":true},{"name":"High top","visible":true,"minDecibels":"-70","maxDecibels":"-30","barCount":"128","freqStart":"0.015","freqEnd":"0.03","barsWidth":"1","barsStartX":"1.45","barsEndX":"1.05","barsY":"0.2","color":"#ffffff","barsPow":"3","barsHeight":"0.02","barsMinHeight":"0.01","glowness":"4","polar":"1","mode":0,"clampShapeToZero":true,"closeShape":true,"drawLast":true,"quadratic":true},{"name":"High bottom","visible":true,"minDecibels":"-70","maxDecibels":"-30","barCount":"128","freqStart":"0.015","freqEnd":"0.03","barsWidth":"1","barsStartX":"0.65","barsEndX":"1.05","barsY":"0.2","color":"#ffffff","barsPow":"3","barsHeight":"0.02","barsMinHeight":"0.01","glowness":"4","polar":"1","mode":0,"clampShapeToZero":true,"closeShape":true,"drawLast":true,"quadratic":true}],"globalScale":"max(max((maxval + 70) / 40, 0) * 1.5, 1)","globalOffsetX":"0","globalOffsetY":"0","globalRotation":"0","imageURL":"dsg.png","imageX":"0","imageY":"0","imageWidth":"0.41","imageHeight":"0.41","backgroundColor":"#3b3b3b"}')),
 	'Rebellion': new Settings({
 			smoothingTimeConstant: 0.5,
 			imageX: 0,
@@ -158,6 +237,11 @@ var settingsPresets = {
 var settings = new Settings();
 var hoverSection = null;
 
+var frameProps = {
+	maxval: 0,
+	minval: Number.MIN_SAFE_INTEGER
+};
+
 function loadFilePreset(f, setIt) {
 	if(!f) return;
 	
@@ -233,7 +317,7 @@ var refreshControls = (function(){
 	var createControl = function(s, x) {
 		var p = s[x];
 		
-		if(typeof p === 'object' || typeof p === 'function') {
+		if((typeof p === 'object' && !p.hasOwnProperty('expr')) || typeof p === 'function') {
 			return null;
 		}
 		
@@ -258,17 +342,28 @@ var refreshControls = (function(){
 		} else {
 			input.type = 'text';
 			
-			input.placeholder = typeof p;
-			input.value = p.toString();
+			input.placeholder = p.hasOwnProperty('expr') ? 'expression' : (typeof p);
+			
+			var val = p.toString();
+			if(val.startsWith('data:')) { // data url :p
+				input.value = 'DataURL';
+			} else {
+				if(p.hasOwnProperty('expr'))
+					input.value = p.expr;
+				else
+					input.value = p.toString();
+			}
 		}
 		
 		input.addEventListener('change', function(){
 			if(typeof s[x] === 'number') {
-				var val = parseFloat(this.value);
+				if(this.value === '') return;
 				
-				this.value = s[x] = (!val ? 0 : val);
+				s[x] = this.value;
 			} else if(typeof s[x] === 'boolean') {
 				s[x] = this.checked;
+			} else if(s[x].hasOwnProperty('expr')) {
+				s[x].expr = this.value;
 			} else {
 				s[x] = this.value;
 			}
@@ -417,6 +512,8 @@ var refreshControls = (function(){
 		
 		input.addEventListener('change', function(){
 			s[x] = this.value;
+			
+			secTabs.children[settings.sections.indexOf(s)].title = s[x];
 		});
 		
 		li.appendChild(input);
@@ -494,6 +591,7 @@ var refreshControls = (function(){
 	var actionAddTab = function(i) {
 		var tabLi = $("<li>")[0];
 		tabLi.innerHTML = i.toString();
+		tabLi.title = settings.sections[i].name;
 		tabLi.classList.add('sectionTab');
 		tabLi.addEventListener('click', actionTabClicked);
 		tabLi.addEventListener('mouseover', actionTabOver);
@@ -550,7 +648,13 @@ var refreshControls = (function(){
 		}
 	};
 	
-	return function() {
+	return function(what) {
+		if(what === 0) {
+			return;
+		} else if(!what) {
+			what = refreshables.SETTINGS_BIT | refreshables.TABS_BIT | refreshables.PRESETLIST_BIT;
+		}
+		
 		if(!glblSettings)		glblSettings = $("#globalSettings")[0];
 		if(!secTabs)			secTabs = $("#settingsSectionTabs")[0];
 		if(!addTabLi)			addTabLi = $("#addTab")[0];
@@ -597,18 +701,16 @@ var refreshControls = (function(){
 			initialized = true;
 		}
 		
-		refreshSettings();
-		refreshTabs();
-		refreshPresetList();
+		if((what & refreshables.SETTINGS_BIT) !== 0) refreshSettings();
+		if((what & refreshables.TABS_BIT) !== 0) refreshTabs();
+		if((what & refreshables.PRESETLIST_BIT) !== 0) refreshPresetList();
 		
 		actionTabClicked.call(secTabs.children[0]);
 	};
 })();
 
 function loadPreset(name) {
-	// Creates the settings object if someone set it to null :D
-	if(!settings) settings = new Settings(settingsPresets[name]);
-	else settings.set(settingsPresets[name]);
+	settings.set(settingsPresets[name]);
 	
 	refreshControls();
 }
@@ -641,10 +743,10 @@ $(function() {
 		}
 		
 		var reader = new FileReader();
-		
 		reader.addEventListener('load', function(e) {
-			imgReady = false;
-			img.src = e.target.result;
+			settings.imageURL = e.target.result;
+			
+			refreshControls(refreshables.SETTINGS_BIT);
 		});
 		
 		reader.readAsDataURL(imageFile);
@@ -727,6 +829,22 @@ $(function() {
 		}
 	}
 	
+	function freeze(s) {
+		var o = {};
+		
+		for(var x in s) {
+			var v = s[x];
+			
+			if(typeof v === 'object' && v.hasOwnProperty('expr')) {
+				o[x] = v.value;
+			} else {
+				o[x] = v;
+			}
+		}
+		
+		return o;
+	}
+	
 	function freqValue(nind, section) {
 		return Math.max(
 			getValue(
@@ -734,7 +852,7 @@ $(function() {
 				lerp(section.freqStart, section.freqEnd, nind) * freqData.length,
 				section.quadratic,
 				section.minDecibels) - section.minDecibels,
-				0) / (section.maxDecibels - section.minDecibels);
+			0) / (section.maxDecibels - section.minDecibels);
 	}
 	
 	function quadCurve(p0y, cpy, p1y, t) {
@@ -744,7 +862,7 @@ $(function() {
 	}
 	
 	function loop() {
-		analyser.smoothingTimeConstant = settings.smoothingTimeConstant;
+		analyser.smoothingTimeConstant = settings.smoothingTimeConstant.value;
 		
 		if(!freqData) {
 			freqData = new Float32Array(analyser.frequencyBinCount);
@@ -764,6 +882,9 @@ $(function() {
 			cvs.width = cvs.clientWidth;
 			cvs.height = cvs.clientHeight;
 		}
+		
+		frameProps.minval = Math.min.apply(Math, freqData);
+		frameProps.maxval = Math.max.apply(Math, freqData);
 		
 		render();
 		
@@ -827,9 +948,14 @@ $(function() {
 			gtx.translate(cvs.width/2, cvs.height/2);
 			gtx.scale(0.5, -0.5);
 			
+			var glblscl = settings.globalScale.value;
+			gtx.scale(glblscl, glblscl);
+			
 			for(var is = 0; is < settings.sections.length; is++) {
-				var section = settings.sections[is];
+				var section = freeze(settings.sections[is]);
 				var mode = section.mode;
+				
+				var barCount = section.barCount;
 				
 				if(!section.visible) {
 					continue;
@@ -839,15 +965,15 @@ $(function() {
 				gtx.fillStyle = section.color;
 				gtx.lineWidth = (section.barsWidth / 100) * Math.min(cvs.width, cvs.height);
 				gtx.shadowColor = section.color;
-				gtx.shadowBlur = section.glowness;
+				gtx.shadowBlur = section.glowness * glblscl; // Cause for some reasons, it's not scaled by the scale. This comment doesn't make sense.
 				
 				gtx.beginPath();
-				for(var i = 0; i < section.barCount; i++) {
-					if(!section.drawLast && i === section.barCount - 1) {
+				for(var i = 0; i < barCount; i++) {
+					if(!section.drawLast && i === barCount - 1) {
 						break;
 					}
 					
-					var per = i / (section.barCount - 1);
+					var per = i / (barCount - 1);
 					
 					var p = getProps(cwidth, cheight, section, per);
 					
@@ -857,7 +983,7 @@ $(function() {
 					
 					gtx.lineTo(p.ex, p.ey);
 					
-					if(i == section.barCount - 1 && section.clampShapeToZero) {
+					if(i == barCount - 1 && section.clampShapeToZero) {
 						gtx.lineTo(p.x, p.y);
 					}
 				}
@@ -891,12 +1017,15 @@ $(function() {
 				gtx.shadowColor = 'rgba(0, 0, 0, 0)'
 				gtx.shadowBlur = 0;
 				
+				var imgw = settings.imageWidth.value;
+				var imgh = settings.imageHeight.value;
+				
 				gtx.scale(1, -1);
 				gtx.drawImage(img,
-					(settings.imageX - settings.imageWidth/2) * cwidth,
-					(settings.imageY - settings.imageHeight/2) * cheight,
-					settings.imageWidth * cwidth,
-					settings.imageHeight * cheight);
+					(settings.imageX.value - imgw/2) * cwidth,
+					(settings.imageY.value - imgh/2) * cheight,
+					imgw * cwidth,
+					imgh * cheight);
 			}
 		gtx.restore();
 	}
@@ -968,8 +1097,6 @@ $(function() {
 			}
 		});
 		
-		loadPreset('Default');
-		
 		gainNode.gain.value = (audioElement.volume === 0 ? 0.0 : (1.0 / audioElement.volume));
 		
 		audioSource.connect(gainNode);
@@ -979,6 +1106,12 @@ $(function() {
 		img.addEventListener('load', function() {
 			imgReady = true;
 		});
+		settings.watch('imageURL', function(id, oldval, newval) {
+			imgReady = false;
+			img.src = newval;
+			
+			return newval;
+		});
 		
 		console.log(
 			" _    _ ________     __  _ \n"
@@ -987,6 +1120,8 @@ $(function() {
 		+	"|  __  |  __|   \\   /   | |\t" +	"\n"
 		+	"| |  | | |____   | |    |_|\t" +	"Urmusic V0.9\n"
 		+	"|_|  |_|______|  |_|    (_)\t" +	"By Nasso (http://nasso.github.io/)\n\n");
+		
+		loadPreset('DubstepGutter');
 		
 		loop();
 	}
