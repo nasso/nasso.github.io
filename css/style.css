@@ -66,7 +66,7 @@ canvas {
 	background: black;
 }
 
-a {
+a:not(.classic) {
 	transition: background-color 500ms;
 	-o-transition: background-color 500ms;
 	-moz-transition: background-color 500ms;
@@ -85,7 +85,7 @@ a {
 	text-decoration: none;
 }
 
-a:hover, input[type=radio]:checked + label,  input[type=radio]:hover + label {
+a:not(.classic):hover, input[type=radio]:checked + label,  input[type=radio]:hover + label {
 	background-color: #27AE60;
 }
 
@@ -162,4 +162,8 @@ footer {
 	margin: 0px;
 	background-color: #2C3E50;
 	border-top: 1px solid #34495E;
+}
+
+.redP, .redP * {
+	color: red;
 }

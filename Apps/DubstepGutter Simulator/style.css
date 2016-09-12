@@ -78,7 +78,7 @@ input[type=range]{
 }
 
 
-a {
+a:not(.classic) {
 	transition: background-color 500ms;
 	-o-transition: background-color 500ms;
 	-moz-transition: background-color 500ms;
@@ -97,7 +97,7 @@ a {
 	text-decoration: none;
 }
 
-a:hover{
+a:not(.classic):hover {
 	background-color: #27AE60;
 }
 
@@ -146,4 +146,8 @@ a.small{
 
 #linkSubmit{
 	margin-left: 16px;
+}
+
+.redP, .redP * {
+	color: red;
 }
