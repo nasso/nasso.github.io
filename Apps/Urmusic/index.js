@@ -30,7 +30,9 @@ var exprArgs = [
 	'pow',
 	'pi',
 	'maxval',
-	'minval'
+	'minval',
+	'time',
+	'duration'
 ];
 
 function numberProperty(v) {
@@ -50,20 +52,26 @@ function numberProperty(v) {
 	
 	Object.defineProperty(p, 'value', {
 		get: function() {
-			return gtr(
-				Math.random,
-				Math.max,
-				Math.min,
-				Math.cos,
-				Math.sin,
-				Math.tan,
-				Math.acos,
-				Math.asin,
-				Math.atan,
-				Math.pow,
-				Math.PI,
-				frameProps.maxval,
-				frameProps.minval);
+			try {
+				return gtr(
+					Math.random,
+					Math.max,
+					Math.min,
+					Math.cos,
+					Math.sin,
+					Math.tan,
+					Math.acos,
+					Math.asin,
+					Math.atan,
+					Math.pow,
+					Math.PI,
+					frameProps.maxval,
+					frameProps.minval,
+					frameProps.time,
+					frameProps.duration);
+			} catch(e) {
+				return 0;
+			}
 		}
 	});
 	
@@ -73,8 +81,10 @@ function numberProperty(v) {
 		},
 		
 		set: function(val) {
+			if(val === '') val = '0';
+			
 			expr = val;
-			gtr = new Function(exprArgs.join(','), 'return (' + expr + ')');
+			gtr = new Function(exprArgs.join(','), 'return (' + expr.toLowerCase() + ')');
 		}
 	});
 	
@@ -138,13 +148,14 @@ Settings.prototype.set = function(p) {
 	this.imageY = numberProperty(!isNullOrUndef(p.imageY) ? p.imageY : 0);
 	this.imageWidth = numberProperty(!isNullOrUndef(p.imageWidth) ? p.imageWidth : 0.4);
 	this.imageHeight = numberProperty(!isNullOrUndef(p.imageHeight) ? p.imageHeight : 0.4);
+	this.imageRot = numberProperty(!isNullOrUndef(p.imageRot) ? p.imageRot : 0);
 	
 	this.backgroundColor = !isNullOrUndef(p.backgroundColor) ? p.backgroundColor : '#3b3b3b';
 };
 
 var settingsPresets = {
 	'Default': new Settings().addSection(),
-	'DubstepGutter': new Settings(JSON.parse('{"smoothingTimeConstant":"0.5","sections":[{"name":"Bass top","visible":true,"minDecibels":"-70","maxDecibels":"-30","barCount":"128","freqStart":"-0.001","freqEnd":"0.014","barsWidth":"1","barsStartX":"-0.55","barsEndX":"0.1","barsY":"0.2","color":"#ffffff","barsPow":"4","barsHeight":"0.05","barsMinHeight":"0.01","glowness":"4","polar":"1","mode":0,"clampShapeToZero":true,"closeShape":true,"drawLast":true,"quadratic":true},{"name":"Bass bottom","visible":true,"minDecibels":"-70","maxDecibels":"-30","barCount":"128","freqStart":"-0.001","freqEnd":"0.014","barsWidth":"1","barsStartX":"0.65","barsEndX":"0.1","barsY":"0.2","color":"#ffffff","barsPow":"4","barsHeight":"0.05","barsMinHeight":"0.01","glowness":"4","polar":"1","mode":0,"clampShapeToZero":true,"closeShape":true,"drawLast":false,"quadratic":true},{"name":"High top","visible":true,"minDecibels":"-70","maxDecibels":"-30","barCount":"128","freqStart":"0.015","freqEnd":"0.03","barsWidth":"1","barsStartX":"1.45","barsEndX":"1.05","barsY":"0.2","color":"#ffffff","barsPow":"3","barsHeight":"0.02","barsMinHeight":"0.01","glowness":"4","polar":"1","mode":0,"clampShapeToZero":true,"closeShape":true,"drawLast":true,"quadratic":true},{"name":"High bottom","visible":true,"minDecibels":"-70","maxDecibels":"-30","barCount":"128","freqStart":"0.015","freqEnd":"0.03","barsWidth":"1","barsStartX":"0.65","barsEndX":"1.05","barsY":"0.2","color":"#ffffff","barsPow":"3","barsHeight":"0.02","barsMinHeight":"0.01","glowness":"4","polar":"1","mode":0,"clampShapeToZero":true,"closeShape":true,"drawLast":true,"quadratic":true}],"globalScale":"max(max((maxval + 70) / 40, 0) * 1.5, 1)","globalOffsetX":"rand() * max((maxval + 70) / 40, 0) * 0.005 - 0.02","globalOffsetY":"rand() * max((maxval + 70) / 40, 0) * 0.005 - 0.02","globalRotation":"0","imageURL":"dsg.png","imageX":"0","imageY":"0","imageWidth":"0.41","imageHeight":"0.41","backgroundColor":"#3b3b3b"}')),
+	'DubstepGutter': new Settings(JSON.parse('{"smoothingTimeConstant":"0.5","sections":[{"name":"Bass top","visible":true,"minDecibels":"-70","maxDecibels":"-30","barCount":"128","freqStart":"-0.002","freqEnd":"0.02","barsWidth":"1","barsStartX":"-0.55","barsEndX":"0.1","barsY":"0.2","color":"#ffffff","barsPow":"5","barsHeight":"0.03","barsMinHeight":"0.005","glowness":"4","polar":"1","mode":0,"clampShapeToZero":true,"closeShape":true,"drawLast":true,"quadratic":true},{"name":"Bass bottom","visible":true,"minDecibels":"-70","maxDecibels":"-30","barCount":"128","freqStart":"-0.002","freqEnd":"0.02","barsWidth":"1","barsStartX":"0.65","barsEndX":"0.1","barsY":"0.2","color":"#ffffff","barsPow":"5","barsHeight":"0.03","barsMinHeight":"0.005","glowness":"4","polar":"1","mode":0,"clampShapeToZero":true,"closeShape":true,"drawLast":false,"quadratic":true},{"name":"High top","visible":true,"minDecibels":"-70","maxDecibels":"-30","barCount":"128","freqStart":"0.015","freqEnd":"0.03","barsWidth":"1","barsStartX":"1.45","barsEndX":"1.05","barsY":"0.2","color":"#ffffff","barsPow":"3","barsHeight":"0.01","barsMinHeight":"0.005","glowness":"4","polar":"1","mode":0,"clampShapeToZero":true,"closeShape":true,"drawLast":true,"quadratic":true},{"name":"High bottom","visible":true,"minDecibels":"-70","maxDecibels":"-30","barCount":"128","freqStart":"0.015","freqEnd":"0.03","barsWidth":"1","barsStartX":"0.65","barsEndX":"1.05","barsY":"0.2","color":"#ffffff","barsPow":"3","barsHeight":"0.01","barsMinHeight":"0.005","glowness":"4","polar":"1","mode":0,"clampShapeToZero":true,"closeShape":true,"drawLast":true,"quadratic":true}],"globalScale":"max(max((maxval + 70) / 50, 0) * 3, 1)","globalOffsetX":"rand() * max((maxval + 70) / 50, 0) * 0.01 - 0.02","globalOffsetY":"rand() * max((maxval + 70) / 50, 0) * 0.01 - 0.02","globalRotation":"0","imageURL":"dsg.png","imageX":"0","imageY":"0","imageWidth":"0.405","imageHeight":"0.405","backgroundColor":"#3b3b3b"}')),
 	'Rebellion': new Settings({
 			smoothingTimeConstant: 0.5,
 			imageX: 0,
@@ -885,6 +896,8 @@ $(function() {
 		
 		frameProps.minval = Math.min.apply(Math, freqData);
 		frameProps.maxval = Math.max.apply(Math, freqData);
+		frameProps.time = audioElement.currentTime;
+		frameProps.duration = audioElement.duration;
 		
 		render();
 		
@@ -1024,6 +1037,7 @@ $(function() {
 				var imgh = settings.imageHeight.value;
 				
 				gtx.scale(1, -1);
+				gtx.rotate(settings.imageRot.value);
 				gtx.drawImage(img,
 					(settings.imageX.value - imgw/2) * cwidth,
 					(settings.imageY.value - imgh/2) * cheight,
