@@ -1,0 +1,69 @@
+/* animations */
+@keyframes appear {
+	to {
+		opacity: 1.0;
+	}
+}
+
+/* general */
+* {
+	font-family: Montserrat;
+	color: white;
+}
+
+a {
+	text-decoration: none;
+	color: inherit;
+}
+
+ul {
+	list-style: none;
+	margin: 0px;
+	padding: 0px;
+}
+
+/* main */
+body {
+	background: black;
+	
+	margin: 0px;
+	padding: 0px;
+	
+	position: absolute;
+	top: 0; left: 0; right: 0; bottom: 0;
+}
+
+main {
+	text-align: center;
+	
+	position: absolute;
+	top: 0; left: 0; right: 0; bottom: 0;
+	
+	overflow: hidden;
+}
+
+main>nav>ul {
+	position: absolute;
+	left: 50%; bottom: 40%;
+	
+	transform: translate(-50%, 50%);
+}
+
+main>nav>ul>li {
+	font-size: 2em;
+	
+	display: inline-block;
+	margin: 0 2em;
+}
+
+main>nav>ul>li>a {
+	opacity: 0.0;
+}
+
+main>nav>ul>li>a#about_btn {
+	animation: appear 0.5s ease 3.5s forwards;
+}
+
+main>nav>ul>li>a#projects_btn {
+	animation: appear 0.5s ease 4s forwards;
+}

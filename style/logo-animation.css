@@ -1,0 +1,56 @@
+/* Logo animation */
+@keyframes dash {
+	to {
+		stroke-dashoffset: 0;
+	}
+}
+
+@keyframes dash-reset {
+	to {
+		stroke-dasharray: 0;
+	}
+}
+
+@keyframes logo-entry {
+	to {
+	   opacity: 1.0;
+	   transform: translate(-50%, -50%);
+	}
+}
+
+@keyframes logo-offset {
+	to {
+	   top: 40%;
+	}
+}
+
+#path-n.animating {
+	stroke-dasharray: 170;
+	stroke-dashoffset: 170;
+}
+
+#path-as.animating {
+	stroke-dasharray: 460;
+	stroke-dashoffset: 460;
+}
+
+#path-so.animating {
+	stroke-dasharray: 460;
+	stroke-dashoffset: 460;
+}
+
+.letter-path {
+	animation: dash 3s cubic-bezier(.65,.05,.36,1) forwards;
+}
+
+#logo-svg {
+	position: absolute;
+	left: 50%; top: 50%;
+	
+	opacity: 0.0;
+	transform: translate(-50%, -50%) scale(1.5);
+	
+	animation:
+		logo-entry 3s cubic-bezier(.25,.46,.45,.94) forwards,
+		logo-offset 1s ease 3.5s forwards;
+}
