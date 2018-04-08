@@ -7,8 +7,12 @@
 
 /* general */
 * {
-	font-family: Montserrat;
-	color: white;
+	font-family: "Montserrat", sans-serif;
+	color: #fff;
+}
+
+:focus {
+	outline: 0;
 }
 
 a {
@@ -24,7 +28,7 @@ ul {
 
 /* main */
 body {
-	background: black;
+	background: #000;
 	
 	margin: 0px;
 	padding: 0px;
@@ -58,6 +62,36 @@ main>nav>ul>li {
 
 main>nav>ul>li>a {
 	opacity: 0.0;
+	
+	position: relative;
+	padding: 4px;
+	
+	color: #777;
+	
+	transition: color 0.1s;
+}
+
+main>nav>ul>li>a:hover, main>nav>ul>li>a:focus {
+	color: #fff;
+}
+
+main>nav>ul>li>a:after {
+	content: '';
+	
+	background: #fff;
+	
+	display: inline-block;
+	width: 0%; height: 1px;
+	
+	position: absolute;
+	left: 50%; bottom: -4px;
+	
+	transition: left 0.1s, width 0.1s;
+}
+
+main>nav>ul>li>a:hover:after, main>nav>ul>li>a:focus:after {
+	width: 100%;
+	left: 0%;
 }
 
 main>nav>ul>li>a#about_btn {
@@ -66,4 +100,20 @@ main>nav>ul>li>a#about_btn {
 
 main>nav>ul>li>a#projects_btn {
 	animation: appear 0.5s ease 4s forwards;
+}
+
+footer {
+	position: absolute;
+	left: 0; right: 0;
+	bottom: 0;
+	
+	text-align: center;
+	
+	padding: 8px;
+}
+
+footer #wip {
+	font-family: "Source Code Pro", monospace;
+	
+	color: #777;
 }
