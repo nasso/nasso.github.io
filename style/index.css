@@ -29,45 +29,53 @@ ul {
 /* main */
 body {
 	background: #000;
-	
+
 	margin: 0px;
 	padding: 0px;
-	
+
 	position: absolute;
 	top: 0; left: 0; right: 0; bottom: 0;
 }
 
 main {
 	text-align: center;
-	
+
 	position: absolute;
 	top: 0; left: 0; right: 0; bottom: 0;
-	
+
 	overflow: hidden;
+
+	opacity: 1.0;
+
+	transition: opacity 1s;
+}
+
+main.hidden {
+	opacity: 0.0;
 }
 
 main>nav>ul {
 	position: absolute;
 	left: 50%; bottom: 40%;
-	
+
 	transform: translate(-50%, 50%);
 }
 
 main>nav>ul>li {
 	font-size: 2em;
-	
+
 	display: inline-block;
 	margin: 0 2em;
 }
 
 main>nav>ul>li>a {
 	opacity: 0.0;
-	
+
 	position: relative;
 	padding: 4px;
-	
+
 	color: #777;
-	
+
 	transition: color 0.1s;
 }
 
@@ -77,15 +85,15 @@ main>nav>ul>li>a:hover, main>nav>ul>li>a:focus {
 
 main>nav>ul>li>a:after {
 	content: '';
-	
+
 	background: #fff;
-	
+
 	display: inline-block;
 	width: 0%; height: 1px;
-	
+
 	position: absolute;
 	left: 50%; bottom: -4px;
-	
+
 	transition: left 0.1s, width 0.1s;
 }
 
@@ -94,26 +102,46 @@ main>nav>ul>li>a:hover:after, main>nav>ul>li>a:focus:after {
 	left: 0%;
 }
 
-main>nav>ul>li>a#about_btn {
+main.animating>nav>ul>li>a#about_btn {
 	animation: appear 0.5s ease 3.5s forwards;
 }
 
-main>nav>ul>li>a#projects_btn {
+main.animating>nav>ul>li>a#projects_btn {
 	animation: appear 0.5s ease 4s forwards;
 }
 
+#content {
+	opacity: 0.0;
+
+	transition: opacity 0.5s;
+}
+
+#content.active {
+	opacity: 1.0;
+}
+
+#content #banner-svg {
+	transform: translate(0%, -100%);
+
+	transition: transform 0.5s;
+}
+
+#content.active #banner-svg {
+	transform: translate(0%, 0%);
+}
+
 footer {
-	position: absolute;
+	position: fixed;
 	left: 0; right: 0;
 	bottom: 0;
-	
+
 	text-align: center;
-	
+
 	padding: 8px;
 }
 
 footer #wip {
 	font-family: "Source Code Pro", monospace;
-	
+
 	color: #777;
 }

@@ -18,32 +18,34 @@
 	}
 }
 
-#path-n.animating {
+main.animating #path-n {
 	stroke-dasharray: 170;
 	stroke-dashoffset: 170;
 }
 
-#path-as.animating {
+main.animating #path-as {
 	stroke-dasharray: 460;
 	stroke-dashoffset: 460;
 }
 
-#path-so.animating {
+main.animating #path-so {
 	stroke-dasharray: 460;
 	stroke-dashoffset: 460;
 }
 
-.letter-path {
+main.animating .letter-path {
 	animation: dash 3s cubic-bezier(.65,.05,.36,1) forwards;
 }
 
 #logo-svg {
 	position: absolute;
 	left: 50%; top: 50%;
-	
+
 	opacity: 0.0;
 	transform: translate(-50%, -50%) scale(1.5);
-	
+}
+
+main.animating #logo-svg {
 	animation:
 		logo-entry 3s cubic-bezier(.25,.46,.45,.94) forwards,
 		logo-offset 1s ease 3.5s forwards;
