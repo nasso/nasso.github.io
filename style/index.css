@@ -33,9 +33,15 @@ body {
 
 	margin: 0px;
 	padding: 0px;
+	
+	overflow: hidden;
 
 	position: absolute;
 	top: 0; left: 0; right: 0; bottom: 0;
+}
+
+body.scrollable {
+	overflow: auto;
 }
 
 main {
@@ -117,6 +123,8 @@ main.animating>nav>ul>li>a#projects_btn {
 }
 
 #content {
+	padding-bottom: 32px;
+	
 	opacity: 0.0;
 	
 	text-align: center;
@@ -151,10 +159,11 @@ footer {
 	position: fixed;
 	left: 0; right: 0;
 	bottom: 0;
-
+	
+	height: 32px;
+	line-height: 32px;
+	
 	text-align: center;
-
-	padding: 8px;
 }
 
 footer #wip {

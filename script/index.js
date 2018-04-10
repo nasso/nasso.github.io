@@ -42,6 +42,9 @@ function loadContent(hash) {
 		// Hide content if it isn't already
 		el_content.classList.toggle("active", false);
 		
+		// Disable scrolling
+		document.body.classList.toggle("scrollable", false);
+		
 		// Show the main menu, launching the animation if it didn't play already
 		el_main.classList.remove("hidden");
 		el_main.classList.add("animating");
@@ -70,6 +73,9 @@ function loadContent(hash) {
 				
 				el_container.innerHTML = xhr.responseText;
 				el_content.classList.toggle("active", true);
+				
+				// Enable scrolling
+				document.body.classList.toggle("scrollable", true);
 				
 				// Make content focusable
 				unblurContent();
