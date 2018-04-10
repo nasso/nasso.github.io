@@ -6,7 +6,7 @@
 	display: inline-block;
 	width: 250px; height: 220px;
 	
-	text-align: justify;
+	text-align: left;
 	
 	margin: 0; padding: 0;
 	border: 1px solid #888;
@@ -109,14 +109,14 @@
 	transition-delay: 1s;
 }
 
-#project-tiles>li .tile-links>a {
-	color: rgba(255, 255, 255, 0.5);
-	border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+#project-tiles>li a {
+	color: #888;
+	border-bottom: 1px solid #555;
 	
 	transition: color 0.5s, border-bottom-color 0.5s;
 }
 
-#project-tiles>li .tile-links>a:hover {
+#project-tiles>li a:hover {
 	color: #fff;
 	border-bottom-color: #fff;
 }
