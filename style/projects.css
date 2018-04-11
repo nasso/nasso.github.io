@@ -28,28 +28,24 @@
 	transform: translate(0%, -50%);
 	
 	font-size: 1.75em;
-	
-	transition: filter 0.5s;
-}
-
-#project-tiles>li:hover .tile-bg, #project-tiles>li:focus .tile-bg {
-	filter: blur(16px);
 }
 
 #project-tiles>li .tile-info {
+	background: rgba(0, 0, 0, 0.8);
+	
 	margin: 0; padding: 0;
 	
 	position: absolute;
-	top: 190px; bottom: 0;
+	top: 0; bottom: 0;
 	left: 0; right: 0;
 	
-	transition: top 0.5s;
+	transform: translate3d(0px, 190px, 0px);
 	
-	background: rgba(0, 0, 0, 0.5);
+	transition: transform 0.5s;
 }
 
 #project-tiles>li:hover .tile-info, #project-tiles>li:focus .tile-info {
-	top: 0px;
+	transform: translate3d(0px, 0px, 0px);
 }
 
 #project-tiles>li .tile-head {
