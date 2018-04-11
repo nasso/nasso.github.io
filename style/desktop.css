@@ -1,0 +1,19 @@
+#logo-svg {
+	width: 50vw;
+}
+
+#content #banner-svg {
+	width: 512px;
+}
+
+@media (min-height: 350px) {
+	main>nav>ul>li {
+		font-size: 2em;
+	}
+}
+
+@media (min-height: 1vw) {
+	main>nav>ul>li {
+		width: 45%;
+	}
+}

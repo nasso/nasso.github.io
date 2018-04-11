@@ -14,7 +14,7 @@
 
 @keyframes logo-offset {
 	to {
-	   top: 40%;
+	   top: 25%;
 	}
 }
 
@@ -38,9 +38,12 @@ main.animating .letter-path {
 }
 
 #logo-svg {
+	width: 90vw;
+	max-height: 200vh;
+	
 	position: absolute;
 	left: 50%; top: 50%;
-
+	
 	opacity: 0.0;
 	transform: translate(-50%, -50%) scale(1.5);
 }
