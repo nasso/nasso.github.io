@@ -1,4 +1,6 @@
 #content.about #container {
+	width: 100%;
+	
 	position: absolute;
 	top: calc((100% - 128px) / 2 + 128px);
 	
@@ -9,8 +11,10 @@
 	display: inline-block;
 	
 	margin: 0 !important;
+	padding: 0 32px;
 	
 	width: 33.33%;
+	max-width: 500px;
 	
 	vertical-align: top;
 }
