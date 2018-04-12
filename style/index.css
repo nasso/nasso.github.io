@@ -14,6 +14,10 @@
 	box-sizing: border-box;
 }
 
+strong, strong * {
+	font-weight: 500;
+}
+
 :focus {
 	outline: 0;
 }
@@ -165,12 +169,8 @@ main.animating>nav>ul>li>a#projects_btn {
 }
 
 #content #container {
-	text-align: justify;
-	
 	margin: auto;
 	padding: 0px 16px;
-	
-	max-width: 800px;
 }
 
 footer {

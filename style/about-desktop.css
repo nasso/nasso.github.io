@@ -1,0 +1,33 @@
+#content.about #container {
+	position: absolute;
+	top: calc((100% - 128px) / 2 + 128px);
+	
+	transform: translate(0%, -50%);
+}
+
+#content.about section {
+	display: inline-block;
+	
+	margin: 0 !important;
+	
+	width: 33.33%;
+	
+	vertical-align: top;
+}
+
+@media (max-height: 430px) {
+	#content.about #container {
+		top: 280px;
+
+		transform: translate(0%, -50%);
+	}
+}
+
+@media (min-height: 100vw) {
+	#content.about section {
+		display: block;
+		width: 50%;
+		
+		margin: 30% auto !important;
+	}
+}

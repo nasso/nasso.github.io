@@ -61,8 +61,8 @@ function loadContent(hash) {
 		// Hide main menu
 		el_main.classList.add("hidden");
 		
-		// Hide previous content?
-		el_content.classList.toggle("active", false);
+		// Hide previous content (but that should never happen since we have to go back to the main menu)
+		el_content.className = "";
 		
 		setTimeout(function() {
 			if(hash !== window.location.hash) return;
@@ -73,6 +73,7 @@ function loadContent(hash) {
 				
 				el_container.innerHTML = xhr.responseText;
 				el_content.classList.toggle("active", true);
+				el_content.classList.toggle(hashname, true);
 				
 				// Enable scrolling
 				document.body.classList.toggle("scrollable", true);

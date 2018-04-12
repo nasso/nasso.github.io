@@ -1,3 +1,7 @@
+#content.projects #container {
+	max-width: 800px;
+}
+
 #project-tiles {
 	text-align: center;
 }
