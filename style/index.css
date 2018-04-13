@@ -7,7 +7,7 @@
 
 /* general */
 * {
-	font-family: "Montserrat", sans-serif;
+	font-family: "w_Montserrat", sans-serif;
 	font-weight: 300;
 	color: #fff;
 	
@@ -185,7 +185,7 @@ footer {
 }
 
 footer #wip {
-	font-family: "Source Code Pro", monospace;
+	font-family: monospace;
 
 	color: #777;
 }
