@@ -13,6 +13,9 @@
 }
 
 @keyframes logo-offset {
+	from {
+		transform: translate(-50%, -50%);
+	}
 	to {
 	   transform: translate(-50%, -50%) translate(0, -25vh);
 	}
