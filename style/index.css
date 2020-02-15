@@ -81,8 +81,7 @@ main>nav {
 }
 
 main>nav>ul {
-	display: flex;
-	flex-direction: row;
+	display: block;
 	max-width: 800px;
 	margin: auto;
 }
@@ -91,6 +90,7 @@ main>nav>ul>li {
 	font-size: 1.5em;
 	display: inline-block;
 	width: 100%;
+	margin: 5vh 0;
 	padding: 0;
 	border: 0;
 }
