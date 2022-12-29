@@ -14,7 +14,17 @@
   // "forwardPorts": [],
 
   // Use 'postCreateCommand' to run commands after the container is created.
-  "postCreateCommand": "npm i -g vercel"
+"postCreateCommand": "npm i -g vercel",
+"customizations": {
+	"vscode": {
+		"extensions": [
+			"svelte.svelte-vscode",
+			"esbenp.prettier-vscode",
+			"EditorConfig.EditorConfig",
+			"streetsidesoftware.code-spell-checker"
+		]
+	}
+}
 
   // Configure tool-specific properties.
   // "customizations": {},
