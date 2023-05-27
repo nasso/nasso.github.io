@@ -1,34 +1,27 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the
-// README at: https://github.com/devcontainers/templates/tree/main/src/javascript-node
 {
   "name": "Node.js",
-  // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
   "image": "mcr.microsoft.com/devcontainers/javascript-node:0-18",
 
-  // Features to add to the dev container. More info: https://containers.dev/features.
   "features": {
     "ghcr.io/NicoVIII/devcontainer-features/pnpm:2": {}
   },
 
-  // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  // "forwardPorts": [],
-
-  // Use 'postCreateCommand' to run commands after the container is created.
-"postCreateCommand": "npm i -g vercel",
-"customizations": {
-	"vscode": {
-		"extensions": [
-			"svelte.svelte-vscode",
-			"esbenp.prettier-vscode",
-			"EditorConfig.EditorConfig",
-			"streetsidesoftware.code-spell-checker"
-		]
-	}
-}
-
-  // Configure tool-specific properties.
-  // "customizations": {},
-
-  // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-  // "remoteUser": "root"
+  "customizations": {
+    "vscode": {
+      "extensions": [
+		"esbenp.prettier-vscode",
+		"astro-build.astro-vscode",
+		"bradlc.vscode-tailwindcss"
+	],
+      "settings": {
+        "eslint.validate": [
+          "javascript",
+          "javascriptreact",
+          "astro",
+          "typescript",
+          "typescriptreact"
+        ]
+      }
+    }
+  }
 }
