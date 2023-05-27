@@ -1,0 +1,23 @@
+---
+import HomeLayout from "../layouts/HomeLayout.astro";
+
+interface Props {
+  url: string;
+}
+
+const { url } = Astro.props;
+const tab = (
+  {
+    "/about": "about",
+    "/contact": "contact",
+  } as const
+)[url];
+
+if (!tab) throw new Error(`Unknown tab: ${url}`);
+---
+
+<HomeLayout tab={tab}>
+  <main class="prose prose-slate max-w-none dark:prose-invert">
+    <slot />
+  </main>
+</HomeLayout>

@@ -1,0 +1,47 @@
+---
+import RootLayout from "./RootLayout.astro";
+
+interface Props {
+  tab: "about" | "projects" | "contact";
+}
+
+const { tab } = Astro.props;
+---
+
+<RootLayout title="nasso • passionate software engineer">
+  <header class="flex flex-col items-center gap-2">
+    <img
+      src="https://www.gravatar.com/avatar/298b79e55ec36a0d4409605a85562573?s=256"
+      alt="Purple anthro goat & dragon hybrid character, smiling"
+      class="h-32 w-32 rounded-full object-cover"
+    />
+    <h1 class="text-6xl font-bold">nasso</h1>
+    <h2 class="text-2xl text-slate-600 dark:text-slate-400">
+      passionate software engineer
+    </h2>
+    <nav class="mt-4 self-stretch">
+      <ul class="flex">
+        {
+          [
+            ["about", "About", "/about"],
+            ["projects", "Projects", "/"],
+            ["contact", "Contact", "/contact"],
+          ].map(([tabName, label, href]) => (
+            <li
+              class={`relative h-10 grow basis-0 border-b-4 text-center ${
+                tab === tabName
+                  ? "border-purple-600"
+                  : "border-slate-200 dark:border-slate-800"
+              }`}
+            >
+              <a href={href} class="absolute inset-0">
+                {label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+  </header>
+  <slot />
+</RootLayout>

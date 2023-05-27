@@ -1,0 +1,36 @@
+---
+interface Props {
+  title: string;
+  tags?: string[];
+  description: string;
+  image?: string;
+}
+
+const {
+  title,
+  tags = [],
+  description,
+  image = "http://via.placeholder.com/150x150",
+} = Astro.props;
+---
+
+<article class="flex gap-6 rounded-xl p-6 dark:bg-slate-900">
+  {image && <img src={image} alt={title} class="rounded-xl" />}
+  <div class="flex grow flex-col gap-4">
+    <div class="flex items-baseline justify-between">
+      <h1 class="text-xl font-bold text-slate-600 dark:text-slate-400">
+        {title}
+      </h1>
+      {
+        tags.length && (
+          <ul class="ml-auto flex gap-2">
+            {tags.map((tag) => (
+              <li class="rounded-md bg-purple-600 px-2 text-white">{tag}</li>
+            ))}
+          </ul>
+        )
+      }
+    </div>
+    <p class="text-justify text-slate-600 dark:text-slate-400">{description}</p>
+  </div>
+</article>

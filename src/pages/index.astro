@@ -1,15 +1,24 @@
 ---
-import Layout from "../layouts/Layout.astro";
+import ProjectCard from "../components/ProjectCard.astro";
+import HomeLayout from "../layouts/HomeLayout.astro";
 ---
 
-<Layout title="nasso">
-  <header>
-    <h1>nasso</h1>
-    <h2>Passionate Software Engineer</h2>
-  </header>
-  <main>
-    Lorem ipsum dolor sit amet consectetur adipisicing elit. Sed atque veniam
-    perspiciatis ipsa rem! Odit asperiores soluta libero, possimus ea, pariatur
-    fuga, nulla minus perferendis aperiam distinctio commodi nostrum dolorem.
+<HomeLayout tab="projects">
+  <main class="flex flex-col gap-4">
+    <ProjectCard
+      title="Project A"
+      description="Lorem ipsum dolor sit amet consectetur adipisicing elit. Debitis aut iure qui commodi dolorem totam, eaque necessitatibus quaerat!"
+      tags={["foo", "bar", "baz"]}
+    />
+    <ProjectCard
+      title="Project B"
+      description="Lorem ipsum dolor sit amet consectetur adipisicing elit. Debitis aut iure qui commodi dolorem totam, eaque necessitatibus quaerat!"
+      tags={["foo", "bar", "baz"]}
+    />
+    <ProjectCard
+      title="Project C"
+      description="Lorem ipsum dolor sit amet consectetur adipisicing elit. Debitis aut iure qui commodi dolorem totam, eaque necessitatibus quaerat!"
+      tags={["foo", "bar", "baz"]}
+    />
   </main>
-</Layout>
+</HomeLayout>

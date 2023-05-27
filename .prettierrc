@@ -1,5 +1,6 @@
 {
   "printWidth": 80,
+  "proseWrap": "always",
   "trailingComma": "all",
   "pluginSearchDirs": ["."],
   "plugins": ["prettier-plugin-tailwindcss"]
